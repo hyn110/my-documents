@@ -717,8 +717,38 @@ public @ReponseBody User testJSON(){
 ```
 
 > 则前端接收到的返回数据如下 :  {"username":"fmi110","password":"666"}
+>
+> @JsonIgnore注解用来忽略某些字段，可以用在Field或者Getter方法上，用在Setter方法时，和Filed效果一样。这个注解只能用在POJO存在的字段要忽略的情况，不能满足现在需要的情况。
+>
+> @JsonIgnoreProperties(ignoreUnknown = true)，将这个注解写在类上之后，就会忽略类中不存在的字段，可以满足当前的需要。这个注解还可以指定要忽略的字段。使用方法如下：
+>
+> @JsonIgnoreProperties({ "internalId", "secretKey" })
+>
+> 指定的字段不会被序列化和反序列化
 
 ​	当返回的对象中包含 Date 类型的数据 , 默认转换后对应字段的值是 long 类型的数据 , 如果希望返回日期格式的字符串 , 需要进行对应的处理 , 处理方法可参考这里 : [jackson 转换Date 类型](http://blog.csdn.net/z69183787/article/details/40375831)
+
+#### 5 jackson 相关的注解
+
+##### **@JsonIgnoreProperties** 
+
+​	此注解是类注解，作用是json序列化时将java bean中的一些属性忽略掉，序列化和反序列化都受影响 , 如 @JsonIgnoreProperties({ "internalId", "secretKey" })
+
+##### @JsonIgnore
+
+​	此注解用于属性或者方法上，作用和上面的@JsonIgnoreProperties一样
+
+##### @JsonFormat
+
+​	此注解用于属性或者方法上（最好是属性上），可以方便的把Date类型直接转化为我们想要的模式，比如@JsonFormat(pattern = "yyyy-MM-dd HH-mm-ss")
+
+##### @JsonSerialize
+
+​	此注解用于属性或者getter方法上，用于在序列化时嵌入我们自定义的代码，比如序列化一个double时在其后面限制两位小数点。
+
+##### @JsonDeserialize
+
+​	此注解用于属性或者setter方法上，用于在反序列化时可以嵌入我们自定义的代码，类似于上面的@JsonSerialize
 
 ## 6 请求处理方法中可出现的参数类型
 

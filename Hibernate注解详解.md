@@ -134,6 +134,32 @@ public class Flightimplements Serializable {
   )
 ```
 
+## @Basic
+
+​	@Basic标记可以指定实体属性的加载方式 , 有两种加载方式，LAZY和EAGER。LAZY 表示即时加载、EAGER表示惰性加载。默认为即时加载
+
+```java
+@Basic(fetch=FetchType.EAGER)
+@Column(name="CONTACT_EMAIL")
+public String getName() {
+	return name;
+}
+```
+
+## **@Transient**
+
+@Transient表示该属性并非一个到数据库表的字段的映射,ORM框架将忽略该属性；
+如果一个属性并非数据库表的字段映射，就务必将其标示为@Transient，否则ORM框架默认其注解为@Basic
+
+```java
+@Transient  //表示该字段在数据库表中没有
+public int getAge() {
+　return 1+1;
+}
+```
+
+
+
 ## @Embeddable
 
 **嵌入式对象（又称组件）也就是别的对象定义的属性**
