@@ -261,6 +261,8 @@ joda-time-2.9.9.jar
     <!-- 设置使用注解的类所在的jar包 -->
     <context:component-scan base-package="com.itheima" />
     <mvc:annotation-driven/>
+    <!--静态资源交给 defaultServlet 处理,否则访问静态资源会 404-->
+    <mvc:default-servlet-handler/>
 </beans>
 ```
 
@@ -1430,7 +1432,41 @@ public class LoginInterceptor implements HandlerInterceptor {
 </mvc:interceptors>
 ```
 
-## 13 献爱心~~
+## 13 疑难杂症
+
+### 1 表单数据指定字段赋值给指定对象
+
+​	类似 struts2 里边的 , `user1.name=123&user2.name=321` , 两个字段的值分别赋值给 user1 和 user2 两个对象 . 在 SpringMVC 中要达到这样的效果可以通过 @InitBinder 来实现 , 如下:
+
+```Java
+@Controller
+public class HelloController {
+
+    @InitBinder("user1")
+    public void initBinder(WebDataBinder binder){
+        System.out.println("=========initBinder========");
+        binder.setFieldDefaultPrefix("user1."); //"."号不能省略,接受前缀为 "user1."的字段
+    }
+    @InitBinder("user2")
+    public void initBinder2(WebDataBinder binder){
+        System.out.println("=========initBinder2========");
+        binder.setFieldDefaultPrefix("user2.");
+    }
+
+    @RequestMapping("test")
+    @ResponseBody
+    public User test(@ModelAttribute("user1") User user, @ModelAttribute("user2") User u2){
+        System.out.println(user);
+        System.out.println(u2);
+//        System.out.println(u3);
+        return user;
+    }
+}
+```
+
+> @InitBinder("user1")  和  @ModelAttribute("user1") 配对!!! 通过 name 属性对应
+
+## 14 献爱心~~
 
 ​	**两毛也是爱~~~来吧,扫一扫!!!**
 
