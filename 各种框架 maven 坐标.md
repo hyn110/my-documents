@@ -207,31 +207,84 @@ log4j.logger.org.hibernate.type=TRACE
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
+<configuration debug="false">
+	
 
-<!-- For assistance related to logback-translator or configuration  -->
-<!-- files in general, please contact the logback user mailing list -->
-<!-- at http://www.qos.ch/mailman/listinfo/logback-user             -->
-<!--                                                                -->
-<!-- For professional support please see                            -->
-<!--    http://www.qos.ch/shop/products/professionalSupport         -->
-<!--                                                                -->
-<configuration>
-  <appender name="s" class="ch.qos.logback.core.ConsoleAppender">
-    <Target>System.err</Target>
-    <encoder>
-      <pattern>%d{yyyy-MM-dd HH:mm:ss,SSS} %5p %c{1}:%L - %m%n</pattern>
-    </encoder>
-  </appender>
-  <appender name="file" class="ch.qos.logback.core.FileAppender">
-    <File>mylog.log</File>
-    <encoder>
-      <pattern>%d{yyyy-MM-dd HH:mm:ss,SSS} %5p %c{1}:%L - %m%n</pattern>
-    </encoder>
-  </appender>
-  <root level="info">
-    <appender-ref ref="s"/>
-    <appender-ref ref="file"/>
-  </root>
+	<!--定义日志文件的存储地址 勿在 LogBack 的配置中使用相对路径 -->
+	<property name="LOG_HOME" value="/home" />
+	<property name="appName" value="fmi110-hello-springmvc" />
+	
+	
+	<!-- 设置应用的名字 -->
+	<contextName>${appName}</contextName>
+	
+	<!-- 控制台输出 -->
+	<appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+		<encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+			<!--格式化输出：	%d表示日期，
+							%thread表示线程名，
+							%-5level：级别从左显示5个字符宽度
+							%msg：日志消息，%n是换行符 
+							-->
+			<pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{50} -%msg%n</pattern>
+		</encoder>
+	</appender>
+	
+	<!-- 
+	<appender name="FILE"
+		class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+			<FileNamePattern>${LOG_HOME}/TestWeb.log.%d{yyyy-MM-dd}.log
+			</FileNamePattern>
+			<MaxHistory>30</MaxHistory>
+		</rollingPolicy>
+		<encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+			<pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{50} -
+				%msg%n</pattern>
+		</encoder>
+		<triggeringPolicy
+			class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
+			<MaxFileSize>10MB</MaxFileSize>
+		</triggeringPolicy>
+	</appender>
+	 -->
+	
+	<!-- show parameters for hibernate sql 专为 Hibernate 定制 -->
+	<logger name="org.hibernate.type.descriptor.sql.BasicBinder"
+		level="TRACE" />
+	<logger name="org.hibernate.type.descriptor.sql.BasicExtractor"
+		level="DEBUG" />
+	<logger name="org.hibernate.SQL" level="DEBUG" />
+	<logger name="org.hibernate.engine.QueryParameters" level="DEBUG" />
+	<logger name="org.hibernate.engine.query.HQLQueryPlan" level="DEBUG" />
+
+	<!--myibatis log configure -->
+	<logger name="com.apache.ibatis" level="TRACE" />
+	<logger name="java.sql.Connection" level="DEBUG" />
+	<logger name="java.sql.Statement" level="DEBUG" />
+	<logger name="java.sql.PreparedStatement" level="DEBUG" />
+
+	<!-- 日志输出级别 -->
+	<root level="INFO">
+		<appender-ref ref="STDOUT" />
+		<!-- <appender-ref ref="FILE" /> --> <!-- 如果要输入日志到文件,则解开此注解 -->
+	</root>
+	<!--日志异步到数据库 -->
+	<!-- 
+		<appender name="DB" class="ch.qos.logback.classic.db.DBAppender">
+			日志异步到数据库
+			<connectionSource
+				class="ch.qos.logback.core.db.DriverManagerConnectionSource">
+				连接池
+				<dataSource class="com.mchange.v2.c3p0.ComboPooledDataSource">
+					<driverClass>com.mysql.jdbc.Driver</driverClass>
+					<url>jdbc:mysql://127.0.0.1:3306/databaseName</url>
+					<user>root</user>
+					<password>root</password>
+				</dataSource>
+			</connectionSource>
+		</appender> 
+	-->
 </configuration>
 ```
 ### 3 c3p0连接池

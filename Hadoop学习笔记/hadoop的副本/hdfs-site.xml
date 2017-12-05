@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<!-- hdfs-site.xml -->
+<configuration>
+	<property>
+		<name>dfs.namenode.name.dir</name>
+		<value>file:///home/fmi110/local/var/hadoop/hdfs/namenode</value>
+	</property>
+	<property>
+		<name>dfs.datanode.data.dir</name>
+		<value>file:///home/fmi110/local/var/hadoop/hdfs/datanode</value>
+	</property>
+	<property>
+		<name>dfs.namenode.checkpoint.dir</name>
+		<value>file:///home/fmi110/local/var/hadoop/hdfs/namesecondary</value>
+	</property>
+	<property>
+		<name>dfs.replication</name>
+		<value>3</value>
+	</property>
+</configuration>
