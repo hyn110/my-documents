@@ -149,7 +149,11 @@ public abstract class BaseDaoImpl<T> extends HibernateDaoSupport implements Base
 		criteria.setProjection(Projections.rowCount());
 		HibernateTemplate template = getHibernateTemplate();
 		List<Long> results = (List<Long>) template.findByCriteria(criteria);
-		return (long) results.get(0);
+		 if (results != null && results.size() > 0) {
+            return (long) results.get(0);
+        } else {
+            return 0;
+        }
 	}
 
 	@Override
