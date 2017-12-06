@@ -221,27 +221,94 @@ password=
 
 ​	mybatis 中即为重要的调整设置,他们会改变 myBatis 的运行时行为,具体参数如下:
 
-| 设置参数                            | 描述                                       | 有效值  | 默认值     |
-| ------------------------------- | ---------------------------------------- | ---- | ------- |
-| cacheEnable                     | 全局的缓存开关                                  |      | true    |
-| lazyLoadingEnable               | 全局的关联对象的延迟加载的开关                          |      | false   |
-| aggressiveLazyLoading           | 启动时,任意延时属性的加载都使用带有延迟加载属性的对象完整加载,否则每种属性将会按需加载 |      | true    |
-| multipleResultSetsEnable        | 允许单一语句返回多结果集(需要兼容驱动)                     |      | true    |
-| userColumnLabel                 | 使用列标签代替列名,不同驱动表现不同,需要自己测试或者查阅资料          |      | true    |
-| userGeneratedKey                | 允许 jdbc 自动生成主键,需要驱动兼容. true 时,这个设置强制使用自动生成主键,尽管一些驱动不能兼容但是仍能正常运行(比如 Deby) |      | false   |
-| autoMappingBehavior             | 指定 myBatis 如何自动映射到字段或属性. NONE 表示取消自动映射;partial 只会自动映射没有定义嵌套结果集映射的结果集; Full 自动映射全部的结果集 |      | partial |
-| autoMappingUnkownColumnBehavior | none , warning , failing 抛异常             |      |         |
-| defaultExecutorType             | 配置默认的执行器. simple ; reuse为重用预处理语句(preparedStatments);batch 重用语句并执行批量更新 |      | simple  |
-| defaultStatementTimeout         | 超时时间                                     |      | null    |
-| defaultFetchSize                | 默认返回结果集的大小                               |      | null    |
-| safeRowBoundsEnabled            | 允许在嵌套语句中使用分页(RowBounds)                  |      | false   |
-|                                 |                                          |      |         |
-|                                 |                                          |      |         |
-|                                 |                                          |      |         |
-|                                 |                                          |      |         |
-|                                 |                                          |      |         |
-|                                 |                                          |      |         |
-|                                 |                                          |      |         |
-|                                 |                                          |      |         |
-|                                 |                                          |      |         |
+| 设置参数                            | 描述                                       | 有效值      |
+| ------------------------------- | ---------------------------------------- | -------- |
+| cacheEnable                     | 全局的缓存开关                                  | True     |
+| lazyLoadingEnable               | 全局的关联对象的延迟加载的开关                          | false    |
+| aggressiveLazyLoading           | 启动时,任意延时属性的加载都使用带有延迟加载属性的对象完整加载,否则每种属性将会按需加载 | true     |
+| multipleResultSetsEnable        | 允许单一语句返回多结果集(需要兼容驱动)                     | true     |
+| userColumnLabel                 | 使用列标签代替列名,不同驱动表现不同,需要自己测试或者查阅资料          | true     |
+| userGeneratedKey                | 允许 jdbc 自动生成主键,需要驱动兼容. true 时,这个设置强制使用自动生成主键,尽管一些驱动不能兼容但是仍能正常运行(比如 Deby) | false    |
+| autoMappingBehavior             | 指定 myBatis 如何自动映射到字段或属性. NONE 表示取消自动映射;partial 只会自动映射没有定义嵌套结果集映射的结果集; Full 自动映射全部的结果集 | partial  |
+| autoMappingUnkownColumnBehavior | none , warning , failing 抛异常             |          |
+| defaultExecutorType             | 配置默认的执行器. simple ; reuse为重用预处理语句(preparedStatments);batch 重用语句并执行批量更新 | simple   |
+| defaultStatementTimeout         | 超时时间                                     | null     |
+| defaultFetchSize                | 默认返回结果集的大小                               | null     |
+| safeRowBoundsEnabled            | 允许在嵌套语句中使用分页(RowBounds)                  | false    |
+| mapUnderscoreToCamelCase        | 开启下划线自动映射驼峰命名规则                          | false    |
+| localCacheScope                 | MyBatis 利用本地缓存机制防止循环引用和加速重复嵌套查询.默认是 SESSION,会缓存一个会话中执行的所有查询,若设置为 STATEMENT,则本地会话仅用在语句执行上,对相同的 sqlSession 的不同调用将不会共享数据 | session  |
+| jdbcTypeForNull                 | 当没有为参数提供特定的 JDBC 类型时,为空值指定 JDBC类型.可选 null\|varchar\|other | other    |
+| lazyLoadTriggerMethods          | 指定哪个对象的方法触发一次延迟加载                        |          |
+| callSettersOnNulls              | 指定当结果集中为 null 时,是否调用映射对象的 setter(map 对象时为 put )方法,这对于 Map.keySet() 依赖或 null 值初始化时有用 | false    |
+| logPrefix                       | 指定 MyBatis 增加到日志名称的前缀                    | null     |
+| logImpl                         | 指定 MyBatis 所有日志的具体实现,,可选 SLF4J\|LOG4J\|LOG4J2\|JDK_LOGGING\|COMMONS_LOGGING\|... |          |
+| proxyFactory                    | 指定 MyBatis 创建具有延迟加载功能对象时所使用的代理工具         | Javasist |
 
+​	下面是默认的配置:
+
+```Xml
+<settings>
+    <setting name="cacheEnabled" value="true"/>
+    <setting name="lazyLoadingEnabled" value="false"/>
+    <setting name="multipleResultSetsEnabled" value="true"/>
+    <setting name="useColumnLabel" value="true"/>
+    <setting name="useGeneratedKeys" value="false "/>
+    <setting name="autoMappingBehavior" value="PARTIAL"/>
+    <setting name="autoMappingUnknownColumnBehavior" value="NONE"/>
+    <setting name="defaultExecutorType" value="SIMPLE"/>
+    <!--<setting name="defaultStatementTimeout" value="25"/>-->
+    <!--<setting name="defaultFetchSize" value="100"/>-->
+    <setting name="safeRowBoundsEnabled" value="false"/>
+    <setting name="mapUnderscoreToCamelCase" value="false"/>
+    <setting name="localCacheScope" value="SESSION"/>
+    <setting name="jdbcTypeForNull" value="OTHER"/>
+    <setting name="lazyLoadTriggerMethods" value="equals,clone,hashCode,toString"/>
+    <setting name="callSettersOnNulls" value="false"/>
+    <setting name="logImpl" value="LOG4J"/>
+</settings>
+```
+
+> value 值区分大小写!!!! 枚举类型数据的值!!!
+
+### 3 typeAliases 类型别名
+
+​	typealiases 是为类型设置一个短的名字.它只和 xml 配置有关,用来减少类完全限定名的冗余的.例如:
+
+```Xml
+<typeAliases>
+    <typeAlias type="com.fmi110.domain.User" alias="user"/>
+    <!--<package name="com.fmi110.domain"/>-->
+</typeAliases>
+```
+
+​	这样配置后, "user" 可以用在任何使用 "com.fmi110.domain.User" 的地方,比如映射器里可以如下写:
+
+```Xml
+<insert id="save" parameterType="USER" useGeneratedKeys="true">
+        insert INTO tb_user(name,sex,age) VALUES (#{name},#{sex},#{age})
+</insert>
+```
+
+> 事实上 , parameterType="USER" , 用 "user" "User" "USER" 此时都能识别,貌似这里是忽略大小写的!!!
+
+​	也可以指定报名,Mybatis 会自动到包下面搜索需要的 javaBean 对象
+
+```Xml
+<typeAliases>
+    <!--<typeAlias type="com.fmi110.domain.User" alias="USER"/>-->
+    <package name="com.fmi110.domain"/>
+</typeAliases>
+```
+
+​	此时默认的别名为类名的小写,比如 com.fmi110.domain.User 的别名为 user , 如果要指定别名,可以在 Bean 类上使用注解 @Alias 指定,如:
+
+```Java
+@Alias("User")
+public class User {
+    private Integer id;
+    private String name;
+	.....
+}
+```
+
+> 我自己测试时映射文件 mapper 中使用别名的地方是不区分大小写的!!!
