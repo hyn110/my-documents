@@ -1,5 +1,7 @@
 # MyBatis 学习笔记
 
+​	[MyBatis 中文文档链接](http://www.mybatis.org/mybatis-3/zh/index.html)
+
 ## 1 最简单的入门案例
 
 ### 1 定义一个 POJO 对象
@@ -174,6 +176,8 @@ public void testInsert() throws IOException {
 
 ## 2 MyBatis 配置文件详解
 
+​	该部分内容参考文档 :    [myBatis3中文文档](http://www.mybatis.org/mybatis-3/zh/configuration.html)
+
 ​	mybatis 的配置根元素是 configuration 对象 , 子元素包含如下节点:
 
 - properties  属性
@@ -312,3 +316,371 @@ public class User {
 ```
 
 > 我自己测试时映射文件 mapper 中使用别名的地方是不区分大小写的!!!
+
+​	MyBatis 内置了一些默认的别名,如下,注意 它们都是大小写不敏感的!!!:
+
+| 别名         | 映射的类型      |
+| ---------- | ---------- |
+| _byte      | byte       |
+| _long      | long       |
+| _short     | short      |
+| _int       | int        |
+| _integer   | int        |
+| _double    | double     |
+| _float     | float      |
+| _boolean   | boolean    |
+| string     | String     |
+| byte       | Byte       |
+| long       | Long       |
+| short      | Short      |
+| int        | Integer    |
+| integer    | Integer    |
+| double     | Double     |
+| float      | Float      |
+| boolean    | Boolean    |
+| date       | Date       |
+| decimal    | BigDecimal |
+| bigdecimal | BigDecimal |
+| object     | Object     |
+| map        | Map        |
+| hashmap    | HashMap    |
+| list       | List       |
+| arraylist  | ArrayList  |
+| collection | Collection |
+| iterator   | Iterator   |
+
+### 4 typeHandlers 类型处理器
+
+​	MyBatis 在预处理语句(PreparedStatement)中设置一个参数或从结果集中取出一个值时,都会用类型处理器将获取的值以合适的方式转换成 Java 类型 . MyBatis 提供了一些默认的类型处理器,这里不介绍了,参考官方文档 : [typeHandlers](http://www.mybatis.org/mybatis-3/zh/configuration.html#typeHandlers)
+
+### 5 ObjectFactory 对象工厂
+
+​	MyBatis 每次创建结果对象的新实例时，它都会使用一个对象工厂（ObjectFactory）实例来完成。 默认的对象工厂需要做的仅仅是实例化目标类，要么通过默认构造方法，要么在参数映射存在的时候通过参数构造方法来实例化。 如果想覆盖对象工厂的默认行为，则可以通过创建自己的对象工厂来实现。比如：
+
+```Java
+// ExampleObjectFactory.java
+public class ExampleObjectFactory extends DefaultObjectFactory {
+  public Object create(Class type) {
+    return super.create(type);
+  }
+  public Object create(Class type, List<Class> constructorArgTypes, List<Object> constructorArgs) {
+    return super.create(type, constructorArgTypes, constructorArgs);
+  }
+  public void setProperties(Properties properties) {
+    super.setProperties(properties);
+  }
+  public <T> boolean isCollection(Class<T> type) {
+    return Collection.class.isAssignableFrom(type);
+  }}
+```
+
+```Xml
+<!-- mybatis-config.xml -->
+<objectFactory type="org.mybatis.example.ExampleObjectFactory">
+  <property name="someProperty" value="100"/>
+</objectFactory>
+```
+
+​	ObjectFactory 接口很简单，它包含两个创建用的方法，一个是处理默认构造方法的，另外一个是处理带参数的构造方法的。 最后，setProperties 方法可以被用来配置 ObjectFactory，在初始化你的 ObjectFactory 实例后， objectFactory 元素体中定义的属性会被传递给 setProperties 方法。
+
+### 6 environments 配置环境
+
+​	MyBatis 可以配置成适应多种环境，这种机制有助于将 SQL 映射应用于多种数据库之中， 现实情况下有多种理由需要这么做。例如，开发、测试和生产环境需要有不同的配置；或者共享相同 Schema 的多个生产数据库， 想使用相同的 SQL 映射。许多类似的用例。
+
+​	**不过要记住：尽管可以配置多个环境，每个 SqlSessionFactory 实例只能选择其一。**
+
+所以，如果你想连接两个数据库，就需要创建两个 SqlSessionFactory 实例，每个数据库对应一个。而如果是三个数据库，就需要三个实例，依此类推，记起来很简单：
+
+- **每个数据库对应一个 SqlSessionFactory 实例**
+
+为了指定创建哪种环境，只要将它作为可选的参数传递给 SqlSessionFactoryBuilder 即可。可以接受环境配置的两个方法签名是：
+
+```Java
+SqlSessionFactory factory = new SqlSessionFactoryBuilder().build(reader, environment);
+SqlSessionFactory factory = new SqlSessionFactoryBuilder().build(reader, environment,properties);
+```
+
+​	如果忽略了环境参数，那么默认环境将会被加载，如下所示
+
+```Java
+SqlSessionFactory factory = new SqlSessionFactoryBuilder().build(reader);
+SqlSessionFactory factory = new SqlSessionFactoryBuilder().build(reader,properties);
+```
+
+​	环境元素定义了如何配置环境:
+
+```Xml
+<!--环境配置,指定连接 mysql 数据库-->
+<environments default="mysql">
+    <environment id="mysql">
+        <!--指定直接使用 JDBC 提交或回滚事务-->
+        <transactionManager type="JDBC"/>
+        <dataSource type="POOLED">
+            <property name="driver" value="${driver}"/>
+            <property name="url" value="${url}"/>
+            <property name="username" value="${username}"/>
+            <property name="password" value="${password}"/>
+        </dataSource>
+    </environment>
+  
+    <environment id="test"><!--测试环境用-->
+        <transactionManager type="JDBC"/>
+        <dataSource type="POOLED">
+            <property name="driver" value="${driver}"/>
+            <property name="url" value="${test.url}"/>
+            <property name="username" value="${test.username}"/>
+            <property name="password" value="${test.password}"/>
+        </dataSource>
+    </environment>
+</environments>
+```
+
+​	这里配置了id 分别为 "mysql" 和 "test" 两个环境, 默认使用的是 "mysql" 环境!!!
+
+#### 1 transactionManager 事务管理器
+
+​	myBatis 提供了两种事务管理器 `JDBC`  和  `MANAGED`
+
+- JDBC : 直接使用 jdbc 的提交和回滚设置 , 它依赖于从数据源得到连接来管理事务范围
+- MANAGERD : 这个配置几乎不做什么 . 它从不提交或回滚一个连接,而是让容器来管理事务的整个生命周期(比如 JEE应用服务器 的上下文).默认情况下它会关闭连接,然而一些容器并不希望这样,可以将 closeConnection 属性设置为 false 来组织该行为
+
+```Xml
+<transactionManager type="MANAGED">
+  <property name="closeConnection" value="false"/>
+</transactionManager>
+```
+
+**注意 : 如果你正在使用 Spring + MyBatis，则没有必要配置事务管理器， 因为 Spring 模块会使用自带的管理器来覆盖前面的配置。**
+
+#### 2 dataSource 数据源
+
+​	MyBatis 提供了 `UNPOOLED` , `POOLED` , `JNDI` 三种数据源类型	
+
+- UNPOOLED : 不适用连接池 , 每次请求都打开和关闭连接 , 比较少使用.
+- POOLED : 使用连接池
+- JNDI : 这个数据源的实现是为了能在如 EJB 或应用服务器这类容器中使用，容器可以集中或在外部配置数据源，然后放置一个 JNDI 上下文的引用。这种数据源配置只需要两个属性：
+  - `initial_context` – 这个属性用来在 InitialContext 中寻找上下文（即，initialContext.lookup(initial_context)）。这是个可选属性，如果忽略，那么 data_source 属性将会直接从 InitialContext 中寻找。
+  - `data_source` – 这是引用数据源实例位置的上下文的路径。提供了 initial_context 配置时会在其返回的上下文中进行查找，没有提供时则直接在 InitialContext 中查找。
+
+### 7 mapper 映射器
+
+​	MyBatis 需要开发者自己些 sql 语句,mapper 映射器的功能是告诉框架去哪里获取映射文件,配置方式由如下几种:
+
+``` Xml
+<!-- 使用类相对路径查找 -->
+<mappers>
+  <mapper resource="org/mybatis/builder/AuthorMapper.xml"/>
+  <mapper resource="org/mybatis/builder/BlogMapper.xml"/>
+  <mapper resource="org/mybatis/builder/PostMapper.xml"/>
+</mappers>
+```
+
+``` Xml
+<!-- 使用本地文件 -->
+<mappers>
+  <mapper url="file:///var/mappers/AuthorMapper.xml"/>
+  <mapper url="file:///var/mappers/BlogMapper.xml"/>
+  <mapper url="file:///var/mappers/PostMapper.xml"/>
+</mappers>
+```
+
+```Xml
+<!-- 使用接口类 -->
+<mappers>
+  <mapper class="org.mybatis.builder.AuthorMapper"/>
+  <mapper class="org.mybatis.builder.BlogMapper"/>
+  <mapper class="org.mybatis.builder.PostMapper"/>
+</mappers>
+```
+
+```Xml
+<!-- 指定包名,mybaits 会扫描包下的所有接口 -->
+<mappers>
+  <package name="org.mybatis.builder"/>
+</mappers>
+```
+
+## 3 Mapper XML 映射文件
+
+​	MyBatis 的 sql 语句是通过 SQL 映射文件编辑的,SQL 映射文件有很少的几个顶级元素（按照它们应该被定义的顺序）：
+
+- `cache` – 给定命名空间的缓存配置。
+- `cache-ref` – 其他命名空间缓存配置的引用。
+- `resultMap` – 是最复杂也是最强大的元素，用来描述如何从数据库结果集中来加载对象。
+- `parameterMap` – 已废弃！老式风格的参数映射。内联参数是首选,这个元素可能在将来被移除，这里不会记录。
+- `sql` – 可被其他语句引用的可重用语句块。
+- `insert` – 映射插入语句
+- `update` – 映射更新语句
+- `delete` – 映射删除语句
+- `select` – 映射查询语句
+
+### 1 select 标签
+
+​	select 标签用于映射查询语句 , 如:
+
+```Xml
+<select id="selectPerson" parameterType="int" resultType="hashmap">
+  SELECT * FROM PERSON WHERE ID = #{id}
+</select>
+```
+
+> 注意 : 这里使用了 MyBatis 内置的别名 hashmap !!! 映射 java.util.HashMap
+
+​	这个语句被称作 selectPerson，接受一个 int（或 Integer）类型的参数，并返回一个 HashMap 类型的对象，其中的键是列名，值便是结果行中的对应值。
+
+​	这里 `#{id}` 是占位符 , 这里如果用 jdbc 来实现的话 , 大致如下:
+
+```Java
+// Similar JDBC code, NOT MyBatis…
+String selectPerson = "SELECT * FROM PERSON WHERE ID=?";
+PreparedStatement ps = conn.prepareStatement(selectPerson);
+ps.setInt(1,id);
+```
+
+​	select 允许的配置如下:
+
+```Xml
+<select
+  id="selectPerson"
+  parameterType="int"
+  resultType="hashmap"
+  resultMap="personResultMap"
+  flushCache="false"
+  useCache="true"
+  timeout="10000"
+  fetchSize="256"
+  statementType="PREPARED"
+  resultSetType="FORWARD_ONLY">
+```
+
+| 属性              | 描述                                       |
+| --------------- | ---------------------------------------- |
+| `id`            | 唯一表示符 , 用来引用该语句                          |
+| `parameterType` | 入参类的完全限定名或别名。可选的，因为 MyBatis 可以通过 TypeHandler 推断出具体传入语句的参数，默认值为 unset。 |
+| parameterMap    | 废弃...                                    |
+| `resultType`    | 返回数据类型的完全限定名或别名。如果返回集合,类型应该是集合里的元素的类型!!!使用 resultType 或 resultMap，但不能同时使用。 |
+| `resultMap`     | 外部 resultMap 的命名引用。结果集的映射是 MyBatis 最强大的特性，对其有一个很好的理解的话，许多复杂映射的情形都能迎刃而解。使用 resultMap 或 resultType，但不能同时使用。 |
+| `flushCache`    | 是否清空缓存,默认false                           |
+| `useCache`      | 将其设置为 true，将会导致本条语句的结果被二级缓存，默认值：对 select 元素为 true。 |
+| `timeout`       | 连接超时时间 , 默认 null                         |
+| `fetchSize`     | 这是尝试影响驱动程序每次批量返回的结果行数和这个设置值相等。默认值为 unset（依赖驱动）。 |
+| `statementType` | STATEMENT，PREPARED 或 CALLABLE 的一个。这会让 MyBatis 分别使用 Statement，PreparedStatement 或 CallableStatement，默认值：PREPARED。 |
+| `resultSetType` | FORWARD_ONLY，SCROLL_SENSITIVE 或 SCROLL_INSENSITIVE 中的一个，默认值为 unset （依赖驱动）。 |
+| `databaseId`    |                                          |
+| `resultOrdered` | 这个设置仅针对嵌套结果 select 语句适用：如果为 true，就是假设包含了嵌套结果集或是分组了，这样的话当返回一个主结果行的时候，就不会发生有对前面结果集的引用的情况。这就使得在获取嵌套的结果集的时候不至于导致内存不够用。默认值：`false`。 |
+| `resultSets`    | 这个设置仅对多结果集的情况适用，它将列出语句执行后返回的结果集并给每个结果集一个名称，名称是逗号分隔的。 |
+
+### 2 insert  update delete
+
+​	修改数据的sql 映射配置非常相近:
+
+```Xml
+<insert
+  id="insertAuthor"
+  parameterType="domain.blog.Author"
+  flushCache="true"
+  statementType="PREPARED"
+  keyProperty=""
+  keyColumn=""
+  useGeneratedKeys=""
+  timeout="20">
+```
+
+```Xml
+<update
+  id="updateAuthor"
+  parameterType="domain.blog.Author"
+  flushCache="true"
+  statementType="PREPARED"
+  timeout="20">
+```
+
+```xml
+<delete
+  id="deleteAuthor"
+  parameterType="domain.blog.Author"
+  flushCache="true"
+  statementType="PREPARED"
+  timeout="20">
+```
+
+| 属性                 | 描述                                       |
+| ------------------ | ---------------------------------------- |
+| `id`               | 命名空间中的唯一标识符，可被用来代表这条语句。                  |
+| `parameterType`    | 入参类型,可选. MyBatis 可自动推测                   |
+| `parameterMap`     |                                          |
+| `flushCache`       | 是否清空缓存,默认 false                          |
+| `timeout`          | 连接超时时间 , 默认 null                         |
+| `statementType`    | STATEMENT，PREPARED 或 CALLABLE 的一个。这会让 MyBatis 分别使用 Statement，PreparedStatement 或 CallableStatement，默认值：PREPARED。 |
+| `useGeneratedKeys` | （仅对 insert 和 update 有用）这会令 MyBatis 使用 JDBC 的 getGeneratedKeys 方法来取出由数据库内部生成的主键（比如：像 MySQL 和 SQL Server 这样的关系数据库管理系统的自动递增字段），默认值：false。 |
+| `keyProperty`      | （仅对 insert 和 update 有用）唯一标记一个属性，MyBatis 会通过 getGeneratedKeys 的返回值或者通过 insert 语句的 selectKey 子元素设置它的键值，默认：`unset`。如果希望得到多个生成的列，也可以是逗号分隔的属性名称列表。 |
+| `keyColumn`        | （仅对 insert 和 update 有用）通过生成的键值设置表中的列名，这个设置仅在某些数据库（像 PostgreSQL）是必须的，当主键列不是表中的第一列的时候需要设置。如果希望得到多个生成的列，也可以是逗号分隔的属性名称列表。 |
+| `databaseId`       | 如果配置了 databaseIdProvider，MyBatis 会加载所有的不带 databaseId 或匹配当前 databaseId 的语句；如果带或者不带的语句都有，则不带的会被忽略。 |
+
+​	示例语句如下:
+
+```Xml
+<insert id="insertAuthor">
+  insert into Author (id,username,password,email,bio)
+  values (#{id},#{username},#{password},#{email},#{bio})
+</insert>
+
+<update id="updateAuthor">
+  update Author set
+    username = #{username},
+    password = #{password},
+    email = #{email},
+    bio = #{bio}
+  where id = #{id}
+</update>
+
+<delete id="deleteAuthor">
+  delete from Author where id = #{id}
+</delete>
+```
+
+​	如果数据库支持自动生成主键 , 则可以设置 `useGeneratedKeys=true` 获取生成的主键值,然后通过 `keyProperty` 属性指定将值赋给哪个字段,如:
+
+```Xml
+<insert id="insertAuthor" useGeneratedKeys="true"
+    keyProperty="id">
+  insert into Author (username,password,email,bio)
+  values (#{username},#{password},#{email},#{bio})
+</insert>
+```
+
+​	则返回的 Author对象的 id 字段将获取到插入数据的主键值.
+
+​	对于不支持自动生成类型的数据库或可能不支持自动生成主键 JDBC 驱动来说，MyBatis 有另外一种方法来生成主键。
+
+​	这里有一个简单（甚至很傻）的示例，它可以生成一个随机 ID（你最好不要这么做，但这里展示了 MyBatis 处理问题的灵活性及其所关心的广度）： 
+
+```Xml
+<insert id="insertAuthor">
+  <selectKey keyProperty="id" resultType="int" order="BEFORE">
+    select CAST(RANDOM()*1000000 as INTEGER) a from SYSIBM.SYSDUMMY1
+  </selectKey>
+  insert into Author
+    (id, username, password, email,bio, favourite_section)
+  values
+    (#{id}, #{username}, #{password}, #{email}, #{bio}, #{favouriteSection,jdbcType=VARCHAR})
+</insert>
+```
+
+​	在上面的示例中，selectKey 元素将会首先运行，Author 的 id 会被设置，然后插入语句会被调用。这给你了一个和数据库中来处理自动生成的主键类似的行为，避免了使 Java 代码变得复杂。selectKey 描述如下:
+
+```Xml
+<selectKey
+  keyProperty="id"
+  resultType="int"
+  order="BEFORE"
+  statementType="PREPARED">
+```
+
+| 属性              | 描述                                       |
+| --------------- | ---------------------------------------- |
+| `keyProperty`   | selectKey 语句结果应该被设置的目标属性。如果希望得到多个生成的列，也可以是逗号分隔的属性名称列表。 |
+| `keyColumn`     | 匹配属性的返回结果集中的列名称。如果希望得到多个生成的列，也可以是逗号分隔的属性名称列表。 |
+| `resultType`    | 结果的类型。MyBatis 通常可以推算出来，但是为了更加确定写上也不会有什么问题。MyBatis 允许任何简单类型用作主键的类型，包括字符串。如果希望作用于多个生成的列，则可以使用一个包含期望属性的 Object 或一个 Map。 |
+| `order`         | 这可以被设置为 BEFORE 或 AFTER。如果设置为 BEFORE，那么它会首先选择主键，设置 keyProperty 然后执行插入语句。如果设置为 AFTER，那么先执行插入语句，然后是 selectKey 元素 - 这和像 Oracle 的数据库相似，在插入语句内部可能有嵌入索引调用。 |
+| `statementType` | 与前面相同，MyBatis 支持 STATEMENT，PREPARED 和 CALLABLE 语句的映射类型，分别代表 PreparedStatement 和 CallableStatement 类型。 |
