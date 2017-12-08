@@ -37,9 +37,9 @@
 
 ```sql
 cmd 命令格式 ： 
-sqlplus sys/<密码>@<ip地址>:1521/orcl
+sqlplus sys/<密码>@<ip地址>:1521/xe
 
-sqlplus sys/orcl@127.0.0.1:1521/orcl
+sqlplus sys/orcl@127.0.0.1:1521/xe
 ```
 
 2 执行下面语句，径端口改为 7000
