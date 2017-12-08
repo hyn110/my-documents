@@ -254,4 +254,65 @@ alter table DEPT enable all triggers;
 alter table EMP enable all triggers;
 alter table SALGRADE enable all triggers;
 ```
-​	文档整理 by  fmi110 ~~~~~~~
+## ​5 解决中文乱码问题(貌似不修改也不会乱码...)
+
+​	使用 sql*Plus 命令行连接数据库,然后按下面进行操作
+
+```json
+SQL*Plus: Release 10.2.0.1.0 - Production on 星期二 12月 5 21:05:04 2017
+
+Copyright (c) 1982, 2005, Oracle.  All rights reserved.
+
+###SQL> connect system/orcl as sysdba      # 管理员身份登录数据库
+已连接。
+###SQL> shutdown immediate
+数据库已经关闭。
+已经卸载数据库。
+ORACLE 例程已经关闭。
+###SQL> startup mount
+ORACLE 例程已经启动。
+
+Total System Global Area  805306368 bytes
+Fixed Size                  1289996 bytes
+Variable Size             213909748 bytes
+Database Buffers          587202560 bytes
+Redo Buffers                2904064 bytes
+数据库装载完毕。
+###SQL> alter system enable restricted session;
+
+系统已更改。
+
+###SQL> alter system set JOB_QUEUE_PROCESSES=0;
+
+系统已更改。
+
+###SQL> alter system set AQ_TM_PROCESSES=0;
+
+系统已更改。
+
+###SQL> alter database open ;
+
+数据库已更改。
+
+###SQL> alter database character set internal_use ZHS16GBK ;
+
+数据库已更改。
+
+###SQL> shutdown immediate
+数据库已经关闭。
+已经卸载数据库。
+ORACLE 例程已经关闭。
+###SQL> startup
+ORACLE 例程已经启动。
+
+Total System Global Area  805306368 bytes
+Fixed Size                  1289996 bytes
+Variable Size             213909748 bytes
+Database Buffers          587202560 bytes
+Redo Buffers                2904064 bytes
+数据库装载完毕。
+数据库已经打开。
+SQL>
+```
+
+文档整理 by  fmi110 ~~~~~~~
