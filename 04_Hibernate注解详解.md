@@ -224,11 +224,11 @@ Person 类定义了 Address 和  Country 对象，具体两个类实现见上。
 
 ## @SequenceGenerator
 
-```
+```java
 @SequenceGenerator(name = "dep_seq",	// 声明一个序列
 					sequenceName = "DEP_SEQ", // 与数据库中序列的名对应
 					initialValue = 1, // 必须指定,否则 hibernate 生成的序列可能出现负数
-					allocationSize=20  // 必须指定,否则 hibernate 生成的序列可能出现负数
+					allocationSize=1  // 必须指定,否则 hibernate 生成的序列可能出现负数
 					)
 ```
 
@@ -251,6 +251,12 @@ public Integer getId(){ ... }
 @Id
 @GeneratedValue(strategy=GenerationType.IDENTITY)
 public Long getId() {... }
+
+// uuid作为主键
+@Id
+@GenericGenerator(name = "system-uuid", strategy = "uuid2")
+@GeneratedValue(generator = "system-uuid")
+private String id;
 ```
 
 AUTO 生成器，适用与可移值的应用，多个@Id可以共享同一个identifier生成器，只要把generator属性设成相同的值就可以。通过**@SequenceGenerator ** 和  **@TableGenerator**  可以配置不同的identifier 生成器。
