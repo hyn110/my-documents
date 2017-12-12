@@ -674,7 +674,7 @@ public class Flight implements Serializable {
 
 **双向**
 
-规范中多对一端几乎总是双向关联中的主体（owner）端，而一对多的关联注解为 @OneToMany(mappedBy=)
+规范中多对一端几乎总是双向关联中的主体（owner）端，而一对多的关联注解为 **@OneToMany(mappedBy=)**
 
 ```java
 @Entity
@@ -696,7 +696,6 @@ public class Soldier {
   ...
 
   }
-
 ```
 
 Troop 通过troop属性和Soldier建立了一对多的双向关联。**在 mappedBy 端不必也不能定义任何物理映射**。
