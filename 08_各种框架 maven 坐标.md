@@ -58,7 +58,13 @@
 <dependency>
     <artifactId>spring-context</artifactId>
     <groupId>org.springframework</groupId>
-    <version>4.2.9.RELEASE</version>
+    <version>4.3.12.RELEASE</version>
+</dependency>
+<!--javaMail 邮件发送等的支持-->
+<dependency>
+    <groupId>org.springframework</groupId>
+    <artifactId>spring-context-support</artifactId>
+    <version>4.3.12.RELEASE</version>
 </dependency>
 ```
 
@@ -74,7 +80,6 @@
     <artifactId>spring-webmvc</artifactId>
     <version>4.3.12.RELEASE</version>
 </dependency>
-
 ```
 
 > 自动依赖 :
@@ -97,7 +102,7 @@
 
 
 
-### Hibernate
+### hibernate
 
 ```xml
 <dependency>
@@ -137,6 +142,28 @@
     <groupId>com.alibaba</groupId>
     <artifactId>druid</artifactId>
     <version>1.1.5</version>
+</dependency>
+```
+
+### javamail 邮件发送
+
+```xml
+ <!-- https://mvnrepository.com/artifact/com.sun.mail/javax.mail -->
+ <dependency>
+     <groupId>com.sun.mail</groupId>
+     <artifactId>javax.mail</artifactId>
+     <version>1.4.4</version>
+ </dependency>
+```
+
+### freemarker 模版
+
+```xml
+<!-- https://mvnrepository.com/artifact/freemarker/freemarker -->
+<dependency>
+    <groupId>freemarker</groupId>
+    <artifactId>freemarker</artifactId>
+    <version>2.3.9</version>
 </dependency>
 ```
 
