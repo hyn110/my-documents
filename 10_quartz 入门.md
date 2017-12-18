@@ -41,21 +41,38 @@
 
 ### 2 核心元素
 
-1. SchedulerFactory : 获取 scheduler 对象的工厂. StdSchedulerFactory 使用最多.
+1. SchedulerFactory : 获取 scheduler 对象的工厂. StdSchedulerFactory 使用最多. StdSchdulerFactory的配置例子， 更多配置，参考[Quartz配置指南](http://quartz-scheduler.org/documentation/quartz-2.2.x/configuration/)：
+
+   ```properties
+   org.quartz.scheduler.instanceName = DefaultQuartzScheduler
+   org.quartz.threadPool.class = org.quartz.simpl.SimpleThreadPool
+   org.quartz.threadPool.threadCount = 10 
+   org.quartz.threadPool.threadPriority = 5
+   org.quartz.threadPool.threadsInheritContextClassLoaderOfInitializingThread = true
+   org.quartz.jobStore.class = org.quartz.simpl.RAMJobStore
+   ```
 
 2. Scheduler : 任务调度器
 
- undefinedTrigger : 触发器 , 定义任务被执行的时间规则(定时规则)
+   > Scheduler就是Quartz的大脑，所有任务都是由它来设施。
+   >
+   > Schduelr包含一个两个重要组件: JobStore和ThreadPool。
+   >
+   > JobStore是会来存储运行时信息的，包括Trigger,Schduler,JobDetail，业务锁等。它有多种实现RAMJob(内存实现)，JobStoreTX(JDBC，事务由Quartz管理），JobStoreCMT(JDBC，使用容器事务)，ClusteredJobStore(集群实现)、TerracottaJobStore([什么是Terractta](http://yale.iteye.com/blog/1541612))。
+   >
+   > ThreadPool就是线程池，Quartz有自己的线程池实现。所有任务的都会由线程池执行。
 
-          > ​	**SimpleTrigger** 一般用于实现每隔一定时间执行任务，以及重复多少次，如每 2 小时执行一次，重复执行 5 次。SimpleTrigger 内部实现机制是通过计算间隔时间来计算下次的执行时间，这就导致其不适合调度定时的任务。例如我们想每天的 1：00AM 执行任务，如果使用 SimpleTrigger 的话间隔时间就是一天。注意这里就会有一个问题，即当有 misfired 的任务并且恢复执行时，该执行时间是随机的（取决于何时执行 misfired 的任务，例如某天的 3：00PM）。这会导致之后每天的执行时间都会变成 3：00PM，而不是我们原来期望的 1：00AM。
-          >
-          > ​	**CronTirgger** 类似于 LINUX 上的任务调度命令 crontab，即利用一个包含 7 个字段的表达式来表示时间调度方式。例如，"0 15 10 * * ? *" 表示每天的 10：15AM 执行任务。对于涉及到星期和月份的调度，CronTirgger 是最适合的，甚至某些情况下是唯一选择。[cron 表达式在线生成](http://www.pdtools.net/tools/becron.jsp)
-          >
-          > ​	**DateIntervalTrigger** 是 Quartz 1.7 之后的版本加入的，其最适合调度类似每 N（1, 2, 3...）小时，每 N 天，每 N 周等的任务。虽然 SimpleTrigger 也能实现类似的任务，但是 DateIntervalTrigger 不会受到我们上面说到的 misfired 任务的影响。另外，DateIntervalTrigger 也不会受到 DST（Daylight Saving Time， 即中国的夏令时）调整的影响。如果使用 SimpleTrigger，本来设定的调度时间就会由于 DST 的调整而提前或延迟一个小时，而 DateIntervalTrigger 不会受此影响。
-          >
-          > ​	**NthIncludedDayTrigger** 的用途比较简单明确，即用于每隔一个周期的第几天调度任务，例如，每个月的第 3 天执行指定的任务。
-          >
-          > ​	 **org.quartz.Calendar** 这个 Calendar 与 Trigger 一起使用，但是它们的作用相反，它是用于排除任务不被执行的情况。例如，按照 Trigger 的规则在 10 月 1 号需要执行任务，但是 Calendar 指定了 10 月 1 号是节日（国庆），所以任务在这一天将不会被执行。通常来说，Calendar 用于排除节假日的任务调度，从而使任务只在工作日执行。
+3. Trigger : 触发器 , 定义任务被执行的时间规则(定时规则)
+
+> **SimpleTrigger** 一般用于实现每隔一定时间执行任务，以及重复多少次，如每 2 小时执行一次，重复执行 5 次。SimpleTrigger 内部实现机制是通过计算间隔时间来计算下次的执行时间，这就导致其不适合调度定时的任务。例如我们想每天的 1：00AM 执行任务，如果使用 SimpleTrigger 的话间隔时间就是一天。注意这里就会有一个问题，即当有 misfired 的任务并且恢复执行时，该执行时间是随机的（取决于何时执行 misfired 的任务，例如某天的 3：00PM）。这会导致之后每天的执行时间都会变成 3：00PM，而不是我们原来期望的 1：00AM。
+>
+>  **CronTirgger** 类似于 LINUX 上的任务调度命令 crontab，即利用一个包含 7 个字段的表达式来表示时间调度方式。例如，"0 15 10 * * ? *" 表示每天的 10：15AM 执行任务。对于涉及到星期和月份的调度，CronTirgger 是最适合的，甚至某些情况下是唯一选择。[cron 表达式在线生成](http://www.pdtools.net/tools/becron.jsp)
+>
+> **DateIntervalTrigger** 是 Quartz 1.7 之后的版本加入的，其最适合调度类似每 N（1, 2, 3...）小时，每 N 天，每 N 周等的任务。虽然 SimpleTrigger 也能实现类似的任务，但是 DateIntervalTrigger 不会受到我们上面说到的 misfired 任务的影响。另外，DateIntervalTrigger 也不会受到 DST（Daylight Saving Time， 即中国的夏令时）调整的影响。如果使用 SimpleTrigger，本来设定的调度时间就会由于 DST 的调整而提前或延迟一个小时，而 DateIntervalTrigger 不会受此影响。
+>
+> **NthIncludedDayTrigger** 的用途比较简单明确，即用于每隔一个周期的第几天调度任务，例如，每个月的第 3 天执行指定的任务。
+>
+> **org.quartz.Calendar** 这个 Calendar 与 Trigger 一起使用，但是它们的作用相反，它是用于排除任务不被执行的情况。例如，按照 Trigger 的规则在 10 月 1 号需要执行任务，但是 Calendar 指定了 10 月 1 号是节日（国庆），所以任务在这一天将不会被执行。通常来说，Calendar 用于排除节假日的任务调度，从而使任务只在工作日执行。
 
 4. Job : 任务接口 , 定义具体要做的事情
 
@@ -142,7 +159,7 @@ public class SimpleExample {
 
 ## 4 cronTrigger
 
-​	类似于 LINUX 上的任务调度命令 crontab，即利用一个包含 7 个字段的表达式来表示时间调度方式。例如，"0 15 10 * * ? *" 表示每天的 10：15AM 执行任务。对于涉及到星期和月份的调度，CronTirgger 是最适合的，甚至某些情况下是唯一选择。
+​	使用频率最高的触发器。对于涉及到星期和月份的调度，CronTirgger 是最适合的，甚至某些情况下是唯一选择。
 
 ​	[cron 表达式在线生成](http://www.pdtools.net/tools/becron.jsp)
 
@@ -185,9 +202,11 @@ CronTrigger trigger = TriggerBuilder.newTrigger()
 String cronExpression = trigger.getCronExpression(); // 获取触发器的 cron 表达式
 ```
 
-## 5 数据传递
+## 5 JobDataMap 数据传递
 
-​	quartz 每次执行 job 对象时,会重新创建 job , 这时如果希望把某些数据传递到下一个 job 对象可以通过 JobMap 对象进行传递 . 步骤:
+​	`@PersistJobDataAfterExecution ` : 这个代表该任务可以支持在任务间使用JobDataMap传递信息，在任务结束时保存信息，不必设置为串行。但如果并行任务使用该注解可能会让 JobDataMap 中的内容产生不可预知的结果，所以还是强烈建议使用该注解的同时使用 `@DisallowConcurrentExecution` 注解。如果 Job 上不使用 `@PersistJobDataAfterExecution` 将导致数据不能共享!!!
+
+​	quartz 每次执行 job 对象时,会重新创建 job , 这时如果希望把某些数据传递到下一个 job 对象可以通过 JobDataMap 对象进行传递 . 步骤:
 
 1. 初始化,在构建 jobdetail 对象时存初始值
 
@@ -249,3 +268,248 @@ public class ColorJob implements Job {
 }
 ```
 
+## 6 misfire 处理
+
+​	misfire 是指job指定时刻应该被执行,但没有被执行,并在超过系统设置的misfireThreshold 时间也没有被执行时,被quartz 认定为 misfire . quartz中默认的misfireThreshold是60000，也就是60秒
+
+​	 job 的触发时刻在 quartz 第一次调用job对象时就计算好了,比如 job1从 13:10:00 开始执行,间隔3秒,重复2次 , 则 job1 被触发的时刻分别为 : 
+
+> 13:10:00   13:10:03  13:10:06 
+
+所有MisFire的策略实际上都是解答两个问题：
+
+1. 已经MisFire的任务还要重新触发吗？
+2. 如果发生MisFire，要调整现有的调度时间吗？
+
+### 1 misfire 判定
+
+​	如果某触发器设置为，10:15首次激活，然后每隔3秒激活一次，无限次重复。然而该任务每次运行需要10秒钟的时间。可见，每次任务的执行都会超时，那么究竟是否会引起misfire，就取决于misfireThreshold的值了。以第二次任务来说，它的运行时间已经比预定晚了7秒，那么如果misfireThreshold>7000，说明该偏差可容忍，则不算misfire，该任务立刻执行；如果misfireThreshold<=7000，则判定为misfire，根据相关配置策略进行处理。**注意，任务的延迟是有累计的。在前面的例子中，假设misfireThreshold设置为20000，即20秒。那么每次任务的延迟量即是否misfire计算如下：**
+
+| 任务编号 | 预定运行时刻 | 实际运行时刻 | 延迟量（秒） | 备注      |
+| ---- | ------ | ------ | ------ | ------- |
+| 1    | 10:15  | 10:15  | 0      |         |
+| 2    | 10:18  | 10:25  | 7      |         |
+| 3    | 10:21  | 10:35  | 14     |         |
+| 4    | 10:24  | 10:45  | 21     | misfire |
+
+从表中可以看到，每一次任务执行都会带来7秒的延迟量，该延迟量不断被与misfireThreshold比较，直到达到该值后，在10:24分发生misfire。那么在10:24第10次任务会不会在10:45准时执行呢？答案是不一定，取决于 misfireInstruction 配置。这里说明一下,当对 misfire 做出处理后 , 延迟时间即被清0,重新计算
+
+### 2 misfire 处理策略
+
+​	激活失败指令（Misfire Instructions）是触发器的一个重要属性，它指定了misfire发生时调度器应当如何处理。所有类型的触发器都有一个默认的指令，叫做Trigger.MISFIRE_INSTRUCTION_SMART_POLICY，但是这个这个“聪明策略”对于不同类型的触发器其具体行为是不同的。
+
+​	对于`SimpleTrigger`，这个“聪明策略”将根据触发器实例的状态和配置来决定其行为:
+
+> 如果RepeatCount=0：
+>
+> 	misfireInstruction = SimpleTrigger.MISFIRE_INSTRUCTION_FIRE_NOW;
+>
+> 如果RepeatCount=REPEAT_INDEFINITELY：
+> 	misfireInstruction = SimpleTrigger.MISFIRE_INSTRUCTION_RESCHEDULE_NEXT_WITH_REMAINING_COUNT;
+>
+> 如果Repeat Count>0：
+> 	misfireInstruction = SimpleTrigger.MISFIRE_INSTRUCTION_RESCHEDULE_NOW_WITH_EXISTING_REPEAT_COUNT;
+
+​	对于`CronTrigger`，该“聪明策略”默认选择 `MISFIRE_INSTRUCTION_FIRE_ONCE_NOW` 以指导其行为
+
+常见策略说明 :
+
+**SimpleTrigger**
+
+> - `MISFIRE_INSTRUCTION_IGNORE_MISFIRE_POLICY` : 这个不是忽略已经错失的触发的意思，而是说忽略MisFire策略。它会在资源合适的时候，重新触发所有的MisFire任务，并且不会影响现有的调度时间。
+>
+>   比如，SimpleTrigger每15秒执行一次，而中间有5分钟时间它都MisFire了，一共错失了20个，5分钟后，假设资源充足了，并且任务允许并发，它会被一次性触发。
+>
+>   这个属性是所有Trigger都适用。
+>
+> - `MISFIRE_INSTRUCTION_FIRE_NOW` : 忽略已经MisFire的任务，并且立即执行调度。这通常只适用于只执行一次的任务
+>
+> - `MISFIRE_INSTRUCTION_RESCHEDULE_NOW_WITH_EXISTING_REPEAT_COUNT` : 将startTime设置当前时间，立即重新调度任务，包括的MisFire的
+>
+> - `MISFIRE_INSTRUCTION_RESCHEDULE_NOW_WITH_REMAINING_REPEAT_COUNT` : 忽略已经MisFire的任务, 将startTime设置当前时间，立即重新调度任务
+>
+> - `MISFIRE_INSTRUCTION_RESCHEDULE_NEXT_WITH_EXISTING_COUNT` :  在下一次调度时间点，重新开始调度任务，包括的MisFire的
+>
+> - `MISFIRE_INSTRUCTION_RESCHEDULE_NEXT_WITH_REMAINING_COUNT` : 忽略已经MisFire的任务,下一次调度时间点，重新开始调度任务
+>
+> - `MISFIRE_INSTRUCTION_SMART_POLICY` : 
+
+**CronTrigger:**
+
+| 值                                 | 说明                                       |
+| --------------------------------- | ---------------------------------------- |
+| MISFIRE_INSTRUCTION_FIRE_ONCE_NOW | 立刻执行一次，然后就按照正常的计划执行                      |
+| MISFIRE_INSTRUCTION_DO_NOTHING    | 目前不执行，然后就按照正常的计划执行(执行下一次)。这意味着如果下次执行时间超过了end time，实际上就没有执行机会了 |
+
+[参考资料](http://www.cnblogs.com/pzy4447/p/5201674.html)
+
+```java
+// 构建 Simple 触发器并指定misfire策略
+TriggerBuilder.newTrigger()
+              .withIdentity("simpe", "group1")
+              .usingJobData("key", "data")
+              .withSchedule(SimpleScheduleBuilder.simpleSchedule()
+                                                 .repeatForever()                                              .withMisfireHandlingInstructionIgnoreMisfires())
+              .build();
+
+// 构建 Cron 触发器并指定misfire策略
+TriggerBuilder.newTrigger()
+              .withIdentity("key2", "group2")
+              .withSchedule(CronScheduleBuilder.cronSchedule("0/20 * * * * ?")
+                                .withMisfireHandlingInstructionDoNothing())
+              .build();
+```
+
+## 7 异常处理
+
+​	Job.execute()方法是不允许抛出除JobExecutionException之外的所有异常的（包括RuntimeException)，所以编码的时候，最好是try-catch住所有的Throwable，小心处理.
+
+​	当 job 内部执行出现异常时,可以通过 JobExecutionException 来指定是否要重新执行job任务,如下:
+
+```java
+@PersistJobDataAfterExecution
+@DisallowConcurrentExecution
+public class BadJob1 implements Job {
+
+  // Logging
+  private static Logger _log = LoggerFactory.getLogger(BadJob1.class);
+  private int calculation;
+
+  public void execute(JobExecutionContext context) throws JobExecutionException {
+    JobKey jobKey = context.getJobDetail().getKey();
+    JobDataMap dataMap = context.getJobDetail().getJobDataMap();
+
+    int denominator = dataMap.getInt("denominator");
+    
+    // 只有第一次被调用时会抛异常
+    try {
+      calculation = 4815 / denominator;
+    } catch (Exception e) {
+     
+      JobExecutionException e2 = new JobExecutionException(e);
+
+      // 除数变成1 , 下次运行不会出现再异常
+      dataMap.put("denominator", "1");
+
+      // 立刻重新触发一次job
+      e2.setRefireImmediately(true);
+      
+      /**
+      * Quartz will automatically unschedule
+      * all triggers associated with this job
+      * so that it does not run again
+      */
+      // e2.setUnscheduleAllTriggers(true);
+      
+      throw e2;
+    }
+  }
+
+}
+```
+
+​	在 execute 方法内部捕获异常后, 新建一个 JobExecutionException 对象 , 并指定重试策略:
+
+- setRefireImmediately(true) : 立刻重新执行job , 抛出异常的任务不算在任务总数里.比如 job 应该被执行三次 , 第一次调用时出异常 , 设置了 立即触发 , 则job还会被调用三次.
+
+- setUnscheduleAllTriggers(true) : 移除所有跟当前job相关的触发器,即该job任务不会再被执行!
+
+  ​
+
+  `@DisallowConcurrentExecution` : 这个代表设置该任务为串行执行。
+
+  `@PersistJobDataAfterExecution `: 这个代表该任务可以支持在任务间使用JobDataMap传递信息，在任务结束时保存信息，不必设置为串行。但如果并行任务使用该注解可能会让JobDataMap中的内容产生不可预知的结果，所以还是强烈建议使用该注解的同时使用@DisallowConcurrentExecution注解。
+
+## 8 JobListener 任务监听器
+
+​	[jobListener详解](https://yq.aliyun.com/articles/29120)
+
+​	jobListener实现类必须实现其以下方法：
+
+| 方法                   | 说明                                       |
+| -------------------- | ---------------------------------------- |
+| getName()            | getName() 方法返回一个字符串用以说明 JobListener 的名称。对于注册为全局的监听器，getName() 主要用于记录日志，对于由特定 Job 引用的 JobListener，注册在 JobDetail 上的监听器名称必须匹配从监听器上 getName() 方法的返回值。 |
+| jobToBeExecuted()    | Scheduler 在 JobDetail 将要被执行时调用这个方法。      |
+| jobExecutionVetoed() | Scheduler 在 JobDetail 即将被执行，但又被 TriggerListener 否决了时调用这个方法。 |
+| jobWasExecuted()     | Scheduler 在 JobDetail 被执行之后调用这个方法。       |
+
+​	对 2.x 版本时通过 `org.quartz.ListenerManager` 和 `org.quartz.Matcher` 
+来对我们的监听器进行管理配置:
+
+1. ListenerManager
+
+> `public void addJobListener(JobListener jobListener)` 
+> ​		添加全局监听器，即所有JobDetail都会被此监听器监听 
+>
+> `public void addJobListener(JobListener jobListener, Matcher matcher)` 
+> ​		添加带条件匹配的监听器，在matcher中声明我们的匹配条件 
+>
+> `public void addJobListener(JobListener jobListener, Matcher … matchers)` 
+> ​		添加附带不定参条件陪陪的监听器 
+>
+> `public boolean removeJobListener(String name)` 
+> ​		根据名字移除JobListener 
+>
+> `public List getJobListeners()` 
+> ​		获取所有的监听器 
+>
+> `public JobListener getJobListener(String name)` 
+> ​		根据名字获取监听器
+
+2. Matcher
+
+> `KeyMatcher<JobKey>` 
+>
+> ​	根据JobKey进行匹配，每个JobDetail都有一个对应的JobKey,里面存储了JobName和JobGroup来定位唯一的JobDetail , 常用的方法有 
+>
+> `GroupMatcher`
+>
+> ​	根据组名进行匹配 .常用方法有 : `groupEndsWith()`   `groupEquals()`  `groupStartsWith`
+>
+> and so on....
+
+​	JobListener 示例:
+
+```java
+public class MyJobListener implements JobListener {
+
+    @Override//相当于为我们的监听器命名
+    public String getName() {
+        return "myJobListener";
+    }
+
+    @Override
+    public void jobToBeExecuted(JobExecutionContext context) {
+        System.out.println(getName() + "触发对"+context.getJobDetail().getJobClass()+"的开始执行的监听工作，这里可以完成任务前的一些资源准备工作或日志记录");
+    }
+
+    @Override//“否决JobDetail”是在Triiger被其相应的监听器监听时才具备的能力
+    public void jobExecutionVetoed(JobExecutionContext context) {
+        System.out.println("被否决执行了，可以做些日志记录。");
+    }
+
+    @Override
+    public void jobWasExecuted(JobExecutionContext context,
+            JobExecutionException jobException) {
+        System.out.println(getName() + "触发对"+context.getJobDetail().getJobClass()+"结束执行的监听工作，这里可以进行资源销毁工作或做一些新闻扒取结果的统计工作");
+
+    }
+
+}
+```
+
+​	添加监听器:
+
+```java
+// Set up the listener
+JobListener listener = new MyJobListener();
+Matcher<JobKey> matcher = KeyMatcher.keyEquals(job.getKey());
+// 添加监听器 , 监听器匹配规则由 matcher 确定
+sched.getListenerManager().addJobListener(listener, matcher);
+```
+
+## 9 Job 并发
+
+​	job是有可能并发执行的，比如一个任务要执行10秒中，而调度算法是每秒中触发1次，那么就有可能多个任务被并发执行。
+
+有时候我们并不想任务并发执行，比如这个任务要去”获得数据库中所有未发送邮件的名单“，如果是并发执行，就需要一个数据库锁去避免一个数据被多次处理。这个时候可使用 `@DisallowConcurrentExecution` 解决这个问题。
