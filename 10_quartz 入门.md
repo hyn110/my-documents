@@ -64,15 +64,15 @@
 
 3. Trigger : 触发器 , 定义任务被执行的时间规则(定时规则)
 
-> **SimpleTrigger** 一般用于实现每隔一定时间执行任务，以及重复多少次，如每 2 小时执行一次，重复执行 5 次。SimpleTrigger 内部实现机制是通过计算间隔时间来计算下次的执行时间，这就导致其不适合调度定时的任务。例如我们想每天的 1：00AM 执行任务，如果使用 SimpleTrigger 的话间隔时间就是一天。注意这里就会有一个问题，即当有 misfired 的任务并且恢复执行时，该执行时间是随机的（取决于何时执行 misfired 的任务，例如某天的 3：00PM）。这会导致之后每天的执行时间都会变成 3：00PM，而不是我们原来期望的 1：00AM。
->
->  **CronTirgger** 类似于 LINUX 上的任务调度命令 crontab，即利用一个包含 7 个字段的表达式来表示时间调度方式。例如，"0 15 10 * * ? *" 表示每天的 10：15AM 执行任务。对于涉及到星期和月份的调度，CronTirgger 是最适合的，甚至某些情况下是唯一选择。[cron 表达式在线生成](http://www.pdtools.net/tools/becron.jsp)
->
-> **DateIntervalTrigger** 是 Quartz 1.7 之后的版本加入的，其最适合调度类似每 N（1, 2, 3...）小时，每 N 天，每 N 周等的任务。虽然 SimpleTrigger 也能实现类似的任务，但是 DateIntervalTrigger 不会受到我们上面说到的 misfired 任务的影响。另外，DateIntervalTrigger 也不会受到 DST（Daylight Saving Time， 即中国的夏令时）调整的影响。如果使用 SimpleTrigger，本来设定的调度时间就会由于 DST 的调整而提前或延迟一个小时，而 DateIntervalTrigger 不会受此影响。
->
-> **NthIncludedDayTrigger** 的用途比较简单明确，即用于每隔一个周期的第几天调度任务，例如，每个月的第 3 天执行指定的任务。
->
-> **org.quartz.Calendar** 这个 Calendar 与 Trigger 一起使用，但是它们的作用相反，它是用于排除任务不被执行的情况。例如，按照 Trigger 的规则在 10 月 1 号需要执行任务，但是 Calendar 指定了 10 月 1 号是节日（国庆），所以任务在这一天将不会被执行。通常来说，Calendar 用于排除节假日的任务调度，从而使任务只在工作日执行。
+   > **SimpleTrigger** 一般用于实现每隔一定时间执行任务，以及重复多少次，如每 2 小时执行一次，重复执行 5 次。SimpleTrigger 内部实现机制是通过计算间隔时间来计算下次的执行时间，这就导致其不适合调度定时的任务。例如我们想每天的 1：00AM 执行任务，如果使用 SimpleTrigger 的话间隔时间就是一天。注意这里就会有一个问题，即当有 misfired 的任务并且恢复执行时，该执行时间是随机的（取决于何时执行 misfired 的任务，例如某天的 3：00PM）。这会导致之后每天的执行时间都会变成 3：00PM，而不是我们原来期望的 1：00AM。
+   >
+   >  **CronTirgger** 类似于 LINUX 上的任务调度命令 crontab，即利用一个包含 7 个字段的表达式来表示时间调度方式。例如，"0 15 10 * * ? *" 表示每天的 10：15AM 执行任务。对于涉及到星期和月份的调度，CronTirgger 是最适合的，甚至某些情况下是唯一选择。[cron 表达式在线生成](http://www.pdtools.net/tools/becron.jsp)
+   >
+   > **DateIntervalTrigger** 是 Quartz 1.7 之后的版本加入的，其最适合调度类似每 N（1, 2, 3...）小时，每 N 天，每 N 周等的任务。虽然 SimpleTrigger 也能实现类似的任务，但是 DateIntervalTrigger 不会受到我们上面说到的 misfired 任务的影响。另外，DateIntervalTrigger 也不会受到 DST（Daylight Saving Time， 即中国的夏令时）调整的影响。如果使用 SimpleTrigger，本来设定的调度时间就会由于 DST 的调整而提前或延迟一个小时，而 DateIntervalTrigger 不会受此影响。
+   >
+   > **NthIncludedDayTrigger** 的用途比较简单明确，即用于每隔一个周期的第几天调度任务，例如，每个月的第 3 天执行指定的任务。
+   >
+   > **org.quartz.Calendar** 这个 Calendar 与 Trigger 一起使用，但是它们的作用相反，它是用于排除任务不被执行的情况。例如，按照 Trigger 的规则在 10 月 1 号需要执行任务，但是 Calendar 指定了 10 月 1 号是节日（国庆），所以任务在这一天将不会被执行。通常来说，Calendar 用于排除节假日的任务调度，从而使任务只在工作日执行。
 
 4. Job : 任务接口 , 定义具体要做的事情
 
