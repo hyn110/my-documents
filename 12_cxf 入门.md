@@ -1,5 +1,7 @@
 # cxf 入门
 
+[cxf 系列文章](http://yufenfei.iteye.com/blog/1688133)
+
 ## 1 WebService 简单描述
 
 ​	一言以蔽之：**WebService是一种跨编程语言和跨操作系统平台的远程调用技术。**常用的webservice框架 : cfx、jwx、XFire与Axis2，jwx也就是jax-ws，是java6提供的对webservice的一种实现。cxf框架则简化了服务发布过程。Axis与XFire已随着技术不断的更替慢慢落幕，而目前也只有axis2和cxf官方有更新，Axis与XFire都已不再更新。
@@ -28,7 +30,7 @@
 
 ![](img/webservice.png)
 
-​	注册到 UUID服务器的 webservice 工作流程大致如下 :
+​	**注册到 UUID服务器的 webservice** 工作流程大致如下 :
 
 1. 服务提供者实现服务 , 并在服务注册中心(UDDI)进行注册
 2. 服务请求者向服务注册中心请求特定服务(其实就是请求对应的 wsdl 文件)
@@ -36,5 +38,31 @@
 4. 请求者根据返回的 wsdl 文件 , 生成相应的 soap消息 , 发送给服务提供者
 5. 服务提供者根据 soap消息执行对应的服务 , 并将结果返回给请求者
 
+## 3 使用 cxf 搭建一个 webService
 
+​	CXF：Apache CXF 的前身叫 Apache CeltiXfire，现在已经正式更名为 Apache CXF 了，简称为 CXF。CXF 继承了 Celtix 和 XFire 两大开源项目的精华。
+
+### 1 maven 坐标
+
+```Xml
+<!-- https://mvnrepository.com/artifact/org.apache.cxf/cxf-rt-frontend-jaxws -->
+<dependency>
+    <groupId>org.apache.cxf</groupId>
+    <artifactId>cxf-rt-frontend-jaxws</artifactId>
+    <version>3.0.1</version>
+</dependency>
+<!-- https://mvnrepository.com/artifact/org.apache.cxf/cxf-rt-transports-http -->
+<dependency>
+    <groupId>org.apache.cxf</groupId>
+    <artifactId>cxf-rt-transports-http</artifactId>
+    <version>3.0.1</version>
+</dependency>
+
+<!-- 服务以 war 包形式发布,并且和 spring 整合所以依赖了 springmvc-->
+<dependency>
+    <groupId>org.springframework</groupId>
+    <artifactId>spring-webmvc</artifactId>
+    <version>4.3.10.RELEASE</version>
+</dependency>
+```
 

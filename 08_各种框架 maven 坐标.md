@@ -4,6 +4,8 @@
 
 ### log4j
 
+​	日志框架
+
 ```xml
 <dependency>
     <groupId>org.slf4j</groupId>
@@ -104,6 +106,8 @@
 
 ### hibernate
 
+​	经典的 orm 框架,不解释
+
 ```xml
 <dependency>
     <groupId>org.hibernate</groupId>
@@ -113,6 +117,8 @@
 ```
 
 ### fastJson
+
+​	阿里出品 , 用于 java 对象和 json 数据之间的互转
 
 ```xml
 <!-- https://mvnrepository.com/artifact/com.alibaba/fastjson -->
@@ -136,6 +142,8 @@
 
 ### druid 阿里druid连接池
 
+​	阿里开源的线程池技术
+
 ```xml
 <!--阿里 druid 连接池-->
 <dependency>
@@ -146,6 +154,8 @@
 ```
 
 ### javamail 邮件发送
+
+​	通过 java 代码实现邮件的发送
 
 ```xml
  <!-- https://mvnrepository.com/artifact/com.sun.mail/javax.mail -->
@@ -158,6 +168,8 @@
 
 ### freemarker 模版
 
+​	一个模板技术
+
 ```xml
 <!-- https://mvnrepository.com/artifact/freemarker/freemarker -->
 <dependency>
@@ -166,6 +178,28 @@
     <version>2.3.9</version>
 </dependency>
 ```
+
+### xcf 
+
+​	apache 下的一个 WebService 框架
+
+```Xml
+<!-- https://mvnrepository.com/artifact/org.apache.cxf/cxf-rt-frontend-jaxws -->
+<dependency>
+    <groupId>org.apache.cxf</groupId>
+    <artifactId>cxf-rt-frontend-jaxws</artifactId>
+    <version>3.0.1</version>
+</dependency>
+
+<!-- https://mvnrepository.com/artifact/org.apache.cxf/cxf-rt-transports-http -->
+<dependency>
+    <groupId>org.apache.cxf</groupId>
+    <artifactId>cxf-rt-transports-http</artifactId>
+    <version>3.0.1</version>
+</dependency>
+```
+
+
 
 ## 2 maven 插件
 
