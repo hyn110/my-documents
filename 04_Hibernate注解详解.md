@@ -777,40 +777,42 @@ public class Tiger {
 通过 @ManyToMany  注解定义多对多关系，同时通过 @JoinTable 注解描述关联表和关联条件。其中一端定义为owner, 另一段定义为inverse(对关联表进行更新操作，这段被忽略)。
 
 ```java
-@Entity
-public class Employer implements Serializable {
-
-  @ManyToMany(
-    targetEntity=org.hibernate.test.metadata.manytomany.Employee.class,
-    cascade={CascadeType.PERSIST,CascadeType.MERGE}
-  )
-
-  @JoinTable(
-   name="EMPLOYER_EMPLOYEE",
-   joinColumns=@JoinColumn(name="EMPER_ID"),
-   inverseJoinColumns=@JoinColumn(name="EMPEE_ID")
-  )
-  public Collection getEmployees() {
-    return employees;
-  }
-  ...
+@Entity  
+@Table  
+public class Teacher implements Serializable {   
+	/* 
+     * @ManyToMany 注释表示Teacher 是多对多关系的一端。 
+     * @JoinTable 描述了多对多关系的数据表关系，name属性指定中间表名称。 
+     * joinColumns 定义中间表与Teacher 表的外键关系，
+     *	中间表Teacher_Student的Teacher_ID 列是Teacher 表的主键列teacherid对应的外键列。 
+     * inverseJoinColumns 属性定义了中间表与另外一端(Student)的外键关系。 
+     */  
+    @ManyToMany(cascade = CascadeType.PERSIST, fetch = FetchType.LAZY)  
+    @JoinTable(name = "Teacher_Student",   
+            joinColumns ={@JoinColumn(name = "teacher_ID", referencedColumnName = "teacherid") },   
+            inverseJoinColumns = { @JoinColumn(name = "student_ID", referencedColumnName = "studentid")   
+    })  
+    public Set<Student> getStudents() {  
+        return students;  
+    }  
+  
+  .......
 }
 
-@Entity
-public class Employee implements Serializable {
-
-  @ManyToMany(
-    cascade = {CascadeType.PERSIST,CascadeType.MERGE},
-    mappedBy = "employees",
-    targetEntity = Employer.class
-  )
-
-  public Collection getEmployers() {
-    return employers;
-  }
-
+-----------------------------------------------------------------
+@Entity  
+@Table(name = "Student")  
+public class Student implements Serializable {  
+    /* 
+     * @ManyToMany 注释表示Student是多对多关系的一边，mappedBy 属性
+     *	定义了Student 为双向关系的维护端 
+     */  
+    @ManyToMany(mappedBy = "students")  
+    public Set<Teacher> getTeachers() {  
+        return teachers;  
+    }  
+  ...........
 }
-
 ```
 
 **默认值：**
