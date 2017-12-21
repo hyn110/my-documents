@@ -1147,3 +1147,26 @@ public class Forest {... }
 1. 一对一和多对一的@JoinColumn注解的都是在“主控方”，都是本表指向**外表的外键名称**。
 2. 一对多的@JoinColumn注解在“被控方”，**即一的一方**，指的是**外表的外键的名称**。
 3. 多对多中，joinColumns写的都是**本表在中间表的外键名称**， inverseJoinColumns写的是**另一个表在中间表的外键名称**。
+
+## @Orderby
+
+```java
+ @Entity
+ public class Course {
+    ...
+    @ManyToMany
+    @OrderBy("lastname ASC")
+    public List getStudents() {...};
+    ...
+ }
+ Example 2:
+ @Entity
+ public class Student {
+    ...
+   @ManyToMany(mappedBy="students")
+   @OrderBy // ordering by primary key is assumed
+    public List getCourses() {...};
+    ...
+ }
+```
+
