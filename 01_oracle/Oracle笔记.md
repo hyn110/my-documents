@@ -1,5 +1,60 @@
 # Oracle
 
+## Oracle 监听服务
+
+​	
+
+```Sh
+C:\Users\huangyunning>lsnrctl     # oracle 携带的监听工具
+
+LSNRCTL for 32-bit Windows: Version 10.2.0.1.0 - Production on 25-12月-2017 09:59:30
+
+Copyright (c) 1991, 2005, Oracle.  All rights reserved.
+
+欢迎来到LSNRCTL, 请键入"help"以获得信息。
+
+LSNRCTL> help        # 帮助命令
+以下操作可用
+星号 (*) 表示修改符或扩展命令:
+
+start               stop                status
+services            version             reload
+save_config         trace               change_password
+quit                exit                set*
+show*
+
+LSNRCTL> status
+正在连接到 (DESCRIPTION=(ADDRESS=(PROTOCOL=IPC)(KEY=EXTPROC_FOR_XE)))
+LISTENER 的 STATUS
+------------------------
+别名                      LISTENER
+版本                      TNSLSNR for 32-bit Windows: Version 10.2.0.1.0 - Production
+启动日期                  23-12月-2017 18:25:42
+正常运行时间              1 天 15 小时 34 分 5 秒
+跟踪级别                  off
+安全性                    ON: Local OS Authentication
+SNMP                      OFF
+默认服务           XE
+监听程序参数文件          C:\oraclexe\app\oracle\product\10.2.0\server\network\admin\listener.ora
+监听程序日志文件          C:\oraclexe\app\oracle\product\10.2.0\server\network\log\listener.log
+监听端点概要...
+  (DESCRIPTION=(ADDRESS=(PROTOCOL=ipc)(PIPENAME=\\.\pipe\EXTPROC_FOR_XEipc)))
+  (DESCRIPTION=(ADDRESS=(PROTOCOL=tcp)(HOST=huangyunning-PC)(PORT=1521)))
+  (DESCRIPTION=(ADDRESS=(PROTOCOL=tcp)(HOST=127.0.0.1)(PORT=7000))(Presentation=HTTP)(Session=RAW))
+服务摘要..
+服务 "CLRExtProc" 包含 1 个例程。
+  例程 "CLRExtProc", 状态 UNKNOWN, 包含此服务的 1 个处理程序...
+服务 "PLSExtProc" 包含 1 个例程。
+  例程 "PLSExtProc", 状态 UNKNOWN, 包含此服务的 1 个处理程序...
+服务 "XEXDB" 包含 1 个例程。
+  例程 "xe", 状态 READY, 包含此服务的 1 个处理程序...
+服务 "XE_XPT" 包含 1 个例程。
+  例程 "xe", 状态 READY, 包含此服务的 1 个处理程序...
+服务 "xe" 包含 1 个例程。
+  例程 "xe", 状态 READY, 包含此服务的 1 个处理程序...
+命令执行成功
+```
+
 创建用户scott
 
 ```mysql
