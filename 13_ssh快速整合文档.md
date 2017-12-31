@@ -6,31 +6,31 @@
 
 ​	**struts 相关包 :** 
 
-​		![](struts.jpg)
+​		![](img/struts.jpg)
 
-​		![](struts2.png)
+​		![](img/struts2.png)
 
 ​	**hibernate 核心包 :** 
 
-​		![](hibernate.jpg)
+​		![](img/hibernate.jpg)
 
 ​	**c3p0 连接池 :** 
 
-​		![](c3p0.png)
+​		![](img/c3p0.png)
 
 ​	**spring 相关 :**
 
-​		![](spring1.png)
+​		![](img/spring1.png)
 
-​		![](spring2.png)
+​		![](img/spring2.png)
 
 ​	**log 日志相关 :** 
 
-​		![](log4j.png)
+​		![](img/log4j.png)
 
 ​	**jdbc 驱动 :** 
 
-​		![](jdbc.png)
+​		![](img/jdbc.png)
 
 ## 2 配置文件
 
@@ -148,63 +148,66 @@ log4j.logger.org.hibernate.type=TRACE
 ```html
 <?xml version="1.0" encoding="UTF-8"?>
 <beans xmlns="http://www.springframework.org/schema/beans"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:context="http://www.springframework.org/schema/context"
-	xmlns:tx="http://www.springframework.org/schema/tx"
-	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
 		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.2.xsd
 		http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-4.2.xsd">
 
-	<!-- 声明使用占位符 , 并指定占位符文件位置 -->
-	<context:property-placeholder location="classpath:jdbc.properties" />
+    <!-- 声明使用占位符 , 并指定占位符文件位置 -->
+    <context:property-placeholder location="classpath:jdbc.properties" />
 
-	<!-- 开启注解扫描 -->
-	<context:annotation-config />
+    <!-- 开启注解扫描 -->
+    <context:component-scan base-package="com.fmi110"/>
 
-	<!-- 数据库连接池的配置信息 -->
-	<bean id="dataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource">
-		<!-- 配置：驱动，url，用户名，密码 -->
-		<property name="driverClass" value="${jdbc.driver}" />
-		<property name="jdbcUrl" value="${jdbc.url}" />
-		<property name="user" value="${jdbc.user}" />
-		<property name="password" value="${jdbc.password}" />
-	</bean>
+    <!-- 数据库连接池的配置信息 -->
+    <bean id="dataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource">
+        <!-- 配置：驱动，url，用户名，密码 -->
+        <property name="driverClass" value="${jdbc.driver}" />
+        <property name="jdbcUrl" value="${jdbc.url}" />
+        <property name="user" value="${jdbc.user}" />
+        <property name="password" value="${jdbc.password}" />
+    </bean>
 
-	<!-- 整合hibernate -->
-	<bean id="sessionFactory"
-		class="org.springframework.orm.hibernate5.LocalSessionFactoryBean">
+    <!-- 整合hibernate -->
+    <bean id="sessionFactory"
+          class="org.springframework.orm.hibernate5.LocalSessionFactoryBean">
 
-		<property name="dataSource" ref="dataSource" />
-		<!-- 设置hibernate的相关属性 -->
-		<property name="hibernateProperties">
-			<props>
-				<prop key="hibernate.dialect">${hibernate.dialect}</prop>
-				<prop key="hibernate.show_sql">${hibernate.show_sql}</prop>
-				<prop key="hibernate.format_sql">${hibernate.format_sql}</prop>
-				<prop key="hibernate.hbm2ddl.auto">${hibernate.hbm2ddl.auto}</prop>
-			</props>
-		</property>
-		<!-- 指定hibernate映射文件所在的位置 -->
-		<property name="mappingDirectoryLocations">
-			<array>
-				<value>${hibernate.mapping.dir}</value>
-			</array>
-		</property>
-	</bean>
+        <property name="dataSource" ref="dataSource" />
+        <!-- 设置hibernate的相关属性 -->
+        <property name="hibernateProperties">
+            <props>
+                <prop key="hibernate.dialect">${hibernate.dialect}</prop>
+                <prop key="hibernate.show_sql">${hibernate.show_sql}</prop>
+                <prop key="hibernate.format_sql">${hibernate.format_sql}</prop>
+                <prop key="hibernate.hbm2ddl.auto">${hibernate.hbm2ddl.auto}</prop>
+            </props>
+        </property>
+        <!-- 指定hibernate映射文件所在的位置 -->
+        <property name="mappingDirectoryLocations">
+            <array>
+                <value>${hibernate.mapping.dir}</value>
+            </array>
+        </property>
+        <!--扫描指定包下的 jpa bean对象 -->
+        <property name="packagesToScan" value="com.fmi110.domain"/>
+            
+    </bean>
 
-	<!-- 声明事务管理器 -->
-	<bean id="transactionManager"
-		class="org.springframework.orm.hibernate5.HibernateTransactionManager">
-		<property name="sessionFactory" ref="sessionFactory" />
-	</bean>
+    <!-- 声明事务管理器 -->
+    <bean id="transactionManager"
+          class="org.springframework.orm.hibernate5.HibernateTransactionManager">
+        <property name="sessionFactory" ref="sessionFactory" />
+    </bean>
 
-	<!-- 注解方式的事务 -->
-	<tx:annotation-driven transaction-manager="transactionManager" />
+    <!-- 注解方式的事务 -->
+    <tx:annotation-driven transaction-manager="transactionManager" />
 
 
-	<!-- 引入action service dao 声明 -->
-	<!-- <import resource="applicationContext-action.xml" /> -->
-	<!-- <import resource="applicationContext-service.xml" /> -->
-	<!-- <import resource="applicationContext-dao.xml" /> -->
+    <!-- 引入action service dao 声明 -->
+    <!-- <import resource="applicationContext-action.xml" /> -->
+    <!-- <import resource="applicationContext-service.xml" /> -->
+    <!-- <import resource="applicationContext-dao.xml" /> -->
 
 </beans>
 ```
@@ -227,7 +230,6 @@ hibernate.format_sql=true
 hibernate.hbm2ddl.auto=update
 
 hibernate.mapping.dir=classpath:
-
 ```
 
 > 数据库的信息,必须根据自己的数据库修改 `url` , `user`  , `password`
