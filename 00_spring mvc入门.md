@@ -1401,7 +1401,7 @@ public class DateController {
 
 ```Xml
 <bean id="multipartResolver" class="org.springframework.web.multipart.commons.CommonsMultipartResolver">
-    <!--限定单个文件的大小-->
+    <!--限定单个文件的大小  单位字节-->
     <property name="maxUploadSizePerFile">
         <value>1024000000</value>
     </property>
@@ -1420,17 +1420,16 @@ public class FileUploadController {
     @RequestMapping(value = "upload",method = RequestMethod.POST)
     @ResponseBody
     public String uploadFile(HttpServletRequest request,
-                             @RequestParam("username")String name,
+
                              @RequestParam("file")MultipartFile file) throws IOException {
-        System.out.println(name);
 
         if(!file.isEmpty()){ // 上传了文件
             // 将图片存到工程目录下的 images 目录
-            String path = request.getRealPath("/images/");
+            String path = "D:\\xxxx";
             System.out.println("path : "+path);
 
             String fileName = file.getOriginalFilename();
-            File desFile = new File(path, fileName);
+            File   desFile  = new File(path, fileName);
 
             if(!desFile.getParentFile().exists()){
                 desFile.getParentFile().mkdirs(); // 文件夹不存在时创建文件夹
@@ -1443,6 +1442,25 @@ public class FileUploadController {
         return "success";
     }
 }
+```
+
+>如果上传多个文件,key相同时,只需要将形参改为 `@RequestParam("file")MultipartFile file`
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+
+    <form action="/upload" method="post" enctype="multipart/form-data">
+        <input type="file" name="file">
+        <input type="submit">
+    </form>
+</body>
+</html>
 ```
 
 ## 11 文件下载
@@ -1551,7 +1569,6 @@ public class LoginInterceptor implements HandlerInterceptor {
 
     }
 }
-
 ```
 
 ​	在 springmvc-config.xml 中配置 拦截器
@@ -1601,6 +1618,118 @@ public class HelloController {
 > @InitBinder("user1")  和  @ModelAttribute("user1") 配对!!! 通过 name 属性对应
 
 ## 14 异常处理
+
+Spring MVC处理异常有3种方式： 
+（1）使用Spring MVC提供的简单异常处理器SimpleMappingExceptionResolver； 
+
+（2）实现Spring的异常处理接口HandlerExceptionResolver 自定义自己的异常处理器
+
+（3）使用@ExceptionHandler注解实现异常处理。
+
+​	从3种方式的优缺点比较，若只需要简单的集成异常处理，推荐使用SimpleMappingExceptionResolver即可；**若需要集成的异常处理能够更具个性化，提供给用户更详细的异常信息，推荐自定义实现HandlerExceptionResolver接口的方式**；若不喜欢Spring配置文件或要实现“零配置”，且能接受对原有代码的适当入侵，则建议使用@ExceptionHandler注解方式。 
+
+​	如果三种异常方式的生效顺序 : `3     2     1`
+
+### 1 SimpleMappingExceptionResolver
+
+​	在springmvc配置文件中 ,声明 `SimpleMappingExceptionResolver`
+
+```xml
+    <bean class="org.springframework.web.servlet.handler.SimpleMappingExceptionResolver">
+        <!--定义默认的异常处理页面，当该异常类型的注册时使用-->
+        <property name="defaultErrorView" value="error.jsp"/>
+        <!--定义异常处理页面用来获取异常信息的变量名，默认名为exception-->
+        <property name="exceptionAttribute" value="ex"/>
+        <!--定义需要特殊处理的异常，用类名或完全路径名作为key，异常也页名作为值-->
+        <property name="exceptionMappings">
+            <props>
+                <prop key="com.fmi110.exception.MyException">error-my.jsp</prop>
+                <!--这里还可以继续扩展对不同异常类型的处理-->
+            </props>
+        </property>
+    </bean>
+```
+
+​	error.jsp 页面如下 :
+
+```jsp
+<%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<html>
+<head>
+    <title>异常页面</title>
+</head>
+<body>
+    哎呀~~后台抛异常了...${ex}
+</body>
+</html>
+
+```
+
+> `${ex}`  对应   `<property name="exceptionAttribute" value="ex"/>`   , 用于获取抛出的异常
+
+### 2 HandleExceptionResolver
+
+​	实现 HandlerExceptionResolver 接口 , 并将bean对象注册到 spring 容器中
+
+```java
+package com.fmi110.exception;
+
+import org.springframework.stereotype.Component;
+import org.springframework.web.servlet.HandlerExceptionResolver;
+import org.springframework.web.servlet.ModelAndView;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.util.HashMap;
+import java.util.Map;
+
+@Component
+public class MyExceptionResolver implements HandlerExceptionResolver {
+
+    /**
+     *
+     * @param request
+     * @param response
+     * @param handler 可以从该对象获取是哪个controller方法抛出的异常
+     * @param ex
+     * @return
+     */
+    public ModelAndView resolveException(HttpServletRequest request,
+                                         HttpServletResponse response, Object handler, Exception ex) {
+        Map<String, Object> map = new HashMap<String, Object>();
+        map.put("ex",ex);
+        map.put("handler",handler);
+
+        /**
+         * 在这里可以定制自己的异常处理策略
+         */
+//        if (ex instanceof MyException) {
+//            return new ModelAndView("error-my",map);
+//        } else {
+//            return new ModelAndView("error",map);
+//        }
+        return new ModelAndView("error.jsp",map);
+    }
+}
+
+```
+
+### 3 @ExceptionHandler
+
+​	在 Controller 类中提供方法并添加注解
+
+```java
+    /**
+     * 处理内部异常
+     * @param e
+     * @return
+     */
+    @ExceptionHandler
+    public String handleException(Exception e){
+        System.out.println(this +" handleException()");
+        return "error.jsp";
+    }
+```
 
 ## 15 献爱心~~
 
