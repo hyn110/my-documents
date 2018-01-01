@@ -203,9 +203,9 @@
 
 ## 2 maven 插件
 
+### 1 maven-compiler-plugin 编译插件
+
 ```xml
-<build>
-    <plugins>
         <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-compiler-plugin</artifactId>
@@ -216,6 +216,11 @@
                 <source>1.8</source>
             </configuration>
         </plugin>
+```
+
+### 2 tomcat7-maven-plugin 
+
+```xml
         <plugin>
             <groupId>org.apache.tomcat.maven</groupId>
             <artifactId>tomcat7-maven-plugin</artifactId>
@@ -226,7 +231,14 @@
                 <port>8083</port>
             </configuration>
         </plugin>
-        <plugin>
+```
+
+### 3 maven-war-plugin
+
+​	web 应用打包插件
+
+```xml
+	<plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-war-plugin</artifactId>
             <version>2.6</version>
@@ -235,9 +247,34 @@
                 <failOnMissingWebXml>false</failOnMissingWebXml
             </configuration>
         </plugin>
-    </plugins>
-</build>
 ```
+
+### 4 mybatis-generator-maven-plugin
+
+​	MyBatis 模版代码生成插件 , 需要提供配置文件
+
+```xml
+            <plugin>
+                <groupId>org.mybatis.generator</groupId>
+                <artifactId>mybatis-generator-maven-plugin</artifactId>
+                <version>1.3.2</version>
+                <configuration>
+                    <!--配置文件的位置-->
+                    <configurationFile>src/main/resources/mybatis-generator-config.xml</configurationFile>
+                    <verbose>true</verbose>
+                    <overwrite>true</overwrite>
+                </configuration>
+                <dependencies>
+                    <dependency>
+                        <!--插件单独指定依赖驱动jar,否则报找不到驱动异常-->
+                        <groupId>mysql</groupId>
+                        <artifactId>mysql-connector-java</artifactId>
+                        <version>5.1.39</version>
+                    </dependency>
+                </dependencies>
+            </plugin>
+```
+
 
 
 ## 3 常用的配置文件模版
@@ -484,4 +521,79 @@ log4j.logger.org.hibernate.type=TRACE
     <filter-name>druidWebStatFilter</filter-name>
     <url-pattern>/*</url-pattern>
 </filter-mapping>
+```
+### 6 mybatis-generator-config
+
+​	Mybatis 生成mapper文件需要使用的配置文件
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE generatorConfiguration
+        PUBLIC "-//mybatis.org//DTD MyBatis Generator Configuration 1.0//EN"
+        "http://mybatis.org/dtd/mybatis-generator-config_1_0.dtd">
+
+<generatorConfiguration>
+    <!--指定数据库驱动的路径 , 使用maven 插件时可以不用,
+        使用 Mybatis Plugin 插件生成代码时一定要指定,否则报找不到驱动    
+    -->
+    <!--<classPathEntry-->
+            <!--location="D:\01_MAVEN_RESPOTY\mysql\mysql-connector-java\5.1.39\mysql-connector-java-5.1.39.jar"/>-->
+
+    <context id="sqlserverTables" targetRuntime="MyBatis3">
+        <!-- 生成的pojo，将implements Serializable -->
+        <plugin type="org.mybatis.generator.plugins.SerializablePlugin"></plugin>
+        <commentGenerator>
+            <!-- 是否去除自动生成的注释 true：是 ： false:否 -->
+            <property name="suppressAllComments" value="true"/>
+        </commentGenerator>
+
+        <!-- 数据库链接URL、用户名、密码 -->
+        <jdbcConnection driverClass="com.mysql.jdbc.Driver"
+                        connectionURL="jdbc:mysql://localhost:3306/mybatis"
+                        userId="root"
+                        password="123456">
+        </jdbcConnection>
+
+        <!-- 默认false，把JDBC DECIMAL 和 NUMERIC 类型解析为 Integer true，把JDBC DECIMAL
+            和 NUMERIC 类型解析为java.math.BigDecimal -->
+        <javaTypeResolver>
+            <property name="forceBigDecimals" value="false"/>
+        </javaTypeResolver>
+
+        <!-- 生成model模型，对应的包路径，以及文件存放路径(targetProject)，
+            targetProject可以指定具体的路径,如./src/main/java，
+            也可以使用“MAVEN”来自动生成，这样生成的代码会在target/generatord-source目录下 -->
+        <!--<javaModelGenerator targetPackage="com.joey.mybaties.test.pojo" targetProject="MAVEN"> -->
+        <javaModelGenerator targetPackage="com.fmi110.mybatis.entity"
+                            targetProject="./src/main/java">
+
+            <property name="enableSubPackages" value="true"/>
+            <!-- 从数据库返回的值被清理前后的空格 -->
+            <property name="trimStrings" value="true"/>
+        </javaModelGenerator>
+
+        <!--对应的mapper.xml文件 -->
+        <sqlMapGenerator targetPackage="com.fmi110.mybatis.mappers"
+                         targetProject="./src/main/resources">
+            <property name="enableSubPackages" value="true"/>
+        </sqlMapGenerator>
+
+        <!-- 对应的Mapper接口类文件 -->
+        <javaClientGenerator type="XMLMAPPER"
+                             targetPackage="com.fmi110.mybatis.mappers"
+                             targetProject="./src/main/java">
+            <property name="enableSubPackages" value="true"/>
+        </javaClientGenerator>
+
+
+        <!-- 列出要生成代码的所有表，这里配置的是不生成Example文件 -->
+
+        <table tableName="student" domainObjectName="Student"
+               enableCountByExample="false" enableUpdateByExample="false"
+               enableDeleteByExample="false" enableSelectByExample="false"
+               selectByExampleQueryId="false">
+            <property name="useActualColumnNames" value="false"/>
+        </table>
+    </context>
+</generatorConfiguration>
 ```
