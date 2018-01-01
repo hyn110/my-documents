@@ -684,3 +684,52 @@ ps.setInt(1,id);
 | `resultType`    | 结果的类型。MyBatis 通常可以推算出来，但是为了更加确定写上也不会有什么问题。MyBatis 允许任何简单类型用作主键的类型，包括字符串。如果希望作用于多个生成的列，则可以使用一个包含期望属性的 Object 或一个 Map。 |
 | `order`         | 这可以被设置为 BEFORE 或 AFTER。如果设置为 BEFORE，那么它会首先选择主键，设置 keyProperty 然后执行插入语句。如果设置为 AFTER，那么先执行插入语句，然后是 selectKey 元素 - 这和像 Oracle 的数据库相似，在插入语句内部可能有嵌入索引调用。 |
 | `statementType` | 与前面相同，MyBatis 支持 STATEMENT，PREPARED 和 CALLABLE 语句的映射类型，分别代表 PreparedStatement 和 CallableStatement 类型。 |
+
+## 4 结果映射 ResultMap
+
+​	将结果集映射到 map 中, 默认情况下 key 为表的列名 , value 为对应列的值
+
+```xml
+    <select id="selectUser" parameterType="int" resultType="map">
+        SELECT * FROM USER
+    </select>
+```
+
+```java
+List<Map<String,Object>> list = session.selectList("com.fmi110.domain.UserMapper.selectUser");
+```
+
+​	默认情况下 , MyBatis 会将查询到的数据的列和需要返回的对象的属性逐一进行匹配赋值,但是如果对象的属性和列名不一致 , 则不会赋值 , 这时就需要使用 resultMap进行处理.
+
+​	定义映射关系 :
+
+```xml
+<resultMap id="userMap" type="com.fmi110.domain.User">
+    <id property="id" column="id"/>
+    <result property="age" column="age"/>
+    <result property="name" column="name"/>
+    <result property="sex" column="sex"/>
+</resultMap>
+
+<select id="selectUser" parameterType="int" resultMap="userMap">
+    SELECT * FROM USER
+</select>
+```
+
+> 1. `resultMap --> id`   唯一标识符
+> 2. `resultMap --> type`  返回数据的实际类型  
+> 3. `<id>`  表示数据库表的主键 , property 指定java对象的属性 , column 指定表的列名
+
+## 5 映射关系
+
+​	当java对象的内部存在关联对象时,此时结果集就需要进行关联关系映射 . 
+
+### 1 一对一映射
+
+​	通过  `<resultMap>`   标签的子标签 `<association>`  标签
+
+### 2 一对多映射
+
+
+
+### 3 多对多映射
