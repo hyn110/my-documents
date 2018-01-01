@@ -41,7 +41,7 @@ public interface BaseDao<T> {
      *
      * @return
      */
-    long findCount();
+    Long findCount();
 
     /**
      * 分页查找
@@ -50,7 +50,7 @@ public interface BaseDao<T> {
      * @param maxResults
      * @return
      */
-    List<T> findPage(int firstResult, int maxResults);
+    List<T> findPage(Integer firstResult, Integer maxResults);
 
     /**
      * 条件查询的分页查询
@@ -59,7 +59,7 @@ public interface BaseDao<T> {
      * @param maxResult
      * @return
      */
-    List<T> findPage(DetachedCriteria criteria, int firstResult, int maxResult);
+    List<T> findPage(DetachedCriteria criteria, Integer firstResult, Integer maxResult);
 
     /**
      * 查询所有
@@ -91,7 +91,6 @@ public interface BaseDao<T> {
     void delete(T t);
 
 }
-
 ```
 
 ### 2 BaseDaoImpl 实现类
@@ -111,87 +110,91 @@ import org.hibernate.criterion.Projections;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.orm.hibernate5.HibernateTemplate;
 import org.springframework.orm.hibernate5.support.HibernateDaoSupport;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * 带泛型,实现对象的增删改查
  */
+//@Transactional
 public abstract class BaseDaoImpl<T> extends HibernateDaoSupport implements BaseDao<T> {
 
-	private Class<?> clazz;// 代表T的类型
+    private Class<?> clazz;// 代表T的类型
 
-	public BaseDaoImpl() {
-		// 获取当前的泛型类型
-		Class<?> currentClazz = this.getClass();
-		// 取值是 <T,A,B,C>
-		Type type = currentClazz.getGenericSuperclass();
-		// 1.泛型出现的位置
-		ParameterizedType t = (ParameterizedType) type;
-		// 2.泛型的多少 T
-		Type actualType = t.getActualTypeArguments()[0];
-		clazz = (Class<?>) actualType;
-		System.out.println("BaseDaoImpl 泛型参数的类为 : " + clazz);
-		// clazz = ?;
-	}
-	@Autowired
-	public void injectSessionFactory(SessionFactory sessionFactory){
-		super.setSessionFactory(sessionFactory);
-	}
+    public BaseDaoImpl() {
+        // 获取当前的泛型类型
+        Class<?> currentClazz = this.getClass();
+        // 取值是 <T,A,B,C>
+        Type type = currentClazz.getGenericSuperclass();
+        // 1.泛型出现的位置
+        ParameterizedType t = (ParameterizedType) type;
+        // 2.泛型的多少 T
+        Type actualType = t.getActualTypeArguments()[0];
+        clazz = (Class<?>) actualType;
+        System.out.println("BaseDaoImpl 泛型参数的类为 : " + clazz);
+        // clazz = ?;
+    }
+    @Autowired
+    public void injectSessionFactory(SessionFactory sessionFactory){
+        super.setSessionFactory(sessionFactory);
+    }
+  
+ 
 
-	@Override
-	public void save(T t) {
-		getHibernateTemplate().save(t);
-	}
+    @Override
+    public void save(T t) {
+        getHibernateTemplate().save(t);
+    }
 
-	@Override
-	public long findCount() {
-		DetachedCriteria criteria = DetachedCriteria.forClass(clazz);
-		// 查询条数(count(*))
-		criteria.setProjection(Projections.rowCount());
-		HibernateTemplate template = getHibernateTemplate();
-		List<Long> results = (List<Long>) template.findByCriteria(criteria);
-		 if (results != null && results.size() > 0) {
-            return (long) results.get(0);
+    @Override
+    public Long findCount() {
+        DetachedCriteria criteria = DetachedCriteria.forClass(clazz);
+        // 查询条数(count(*))
+        criteria.setProjection(Projections.rowCount());
+        HibernateTemplate template = getHibernateTemplate();
+        List<Long> results = (List<Long>) template.findByCriteria(criteria);
+        if (results != null && results.size() > 0) {
+            return (Long) results.get(0);
         } else {
-            return 0;
+            return 0l;
         }
-	}
+    }
 
-	@Override
-	public List<T> findPage(int firstResult, int maxResults) {
-		DetachedCriteria criteria = DetachedCriteria.forClass(clazz);
-		HibernateTemplate template = getHibernateTemplate();
-		return (List<T>) template.findByCriteria(criteria, firstResult, maxResults);
-	}
+    @Override
+    public List<T> findPage(Integer firstResult, Integer maxResults) {
+        DetachedCriteria criteria = DetachedCriteria.forClass(clazz);
+        HibernateTemplate template = getHibernateTemplate();
+        return (List<T>) template.findByCriteria(criteria, firstResult, maxResults);
+    }
 
-	@Override
-	public List<T> findPage(DetachedCriteria criteria, int firstResult, int maxResult) {
-		return (List<T>) super.getHibernateTemplate()
-							  .findByCriteria(criteria, firstResult, maxResult);
-	}
+    @Override
+    public List<T> findPage(DetachedCriteria criteria, Integer firstResult, Integer maxResult) {
+        return (List<T>) super.getHibernateTemplate()
+                              .findByCriteria(criteria, firstResult, maxResult);
+    }
 
-	@SuppressWarnings("unchecked")
-	@Override
-	public List<T> findAll() {
-		DetachedCriteria criteria = DetachedCriteria.forClass(clazz);
-		HibernateTemplate template = getHibernateTemplate();
-		return (List<T>) template.findByCriteria(criteria);
-	}
+    @SuppressWarnings("unchecked")
+    @Override
+    public List<T> findAll() {
+        DetachedCriteria criteria = DetachedCriteria.forClass(clazz);
+        HibernateTemplate template = getHibernateTemplate();
+        return (List<T>) template.findByCriteria(criteria);
+    }
 
-	@Override
-	public void update(T t) {
-		getHibernateTemplate().update(t);
-	}
+    @Override
+    public void update(T t) {
+        getHibernateTemplate().update(t);
+    }
 
-	@Override
-	public void delete(T t) {
-		getHibernateTemplate().delete(t);
-	}
+    @Override
+    public void delete(T t) {
+        getHibernateTemplate().delete(t);
+    }
 
 
-	@Override
-	public T findById(Serializable id) {
-		return (T) getHibernateTemplate().get(clazz, id);
-	}
+    @Override
+    public T findById(Serializable id) {
+        return (T) getHibernateTemplate().get(clazz, id);
+    }
 }
 ```
 
@@ -296,16 +299,46 @@ import java.util.List;
 public abstract class BaseServiceImpl<T> implements BaseService<T> {
 
     private BaseDao<T> baseDao;
+  
     @PostConstruct
-    public void initBaseDao(){
-        this.baseDao = getBaseDao();
-        System.out.println("=====BaseBizImpl 业务层注入 dao : "+baseDao);
-    }
+	public void injectDao() throws IllegalArgumentException, IllegalAccessException {
+		
+		Class<? extends BaseBiz> cl = this.getClass();
+		
+		Field[] fields = cl.getDeclaredFields();
+		for (Field field : fields) {
+			field.setAccessible(true);
+			Object object = field.get(this);
+			if(IBaseDao.class.isAssignableFrom(object.getClass())) {
+				// 当前对象的泛型化参数
+				Class<T> t1 = getTypeArgument(this);
+				Class<T> t2 = getTypeArgument(object);
+				System.out.println(t1+"====="+t2+"   ---"+(t1==t2));
+				if(t1==t2) {
+					baseDao = (IBaseDao) object; // 注入dao
+				}
+			}
+		}
+	}
+
+	private Class<T> getTypeArgument(Object object) {
+		// 获取对象对应的父类的类型
+		Type baseDaoClass = object.getClass().getGenericSuperclass();
+		// 转成带参数，即泛型的类型
+		ParameterizedType pType = (ParameterizedType) baseDaoClass;
+		// 获取参数泛型类型数组
+		Type[] types = pType.getActualTypeArguments();
+		// 由于我们的BaseDao<T>的泛型参数里只有一个类型T，因此数组的第一个元素就是类型T的实际上的类型
+		@SuppressWarnings("unused")
+		Class<T> entityClass = (Class<T>) types[0];
+		return entityClass;
+	}
 
     /**
      * 获取basedao,要求子类必须实现
+     * 改进 : 使用反射和注解做了自动注入,不需要子类实现了
      */
-    public abstract BaseDao<T> getBaseDao() ;
+   // public abstract BaseDao<T> getBaseDao() ;
 
     public void setBaseDao(BaseDao<T> baseDao) {
         this.baseDao = baseDao;
@@ -351,7 +384,6 @@ public abstract class BaseServiceImpl<T> implements BaseService<T> {
         baseDao.delete(t);
     }
 }
-
 ```
 
 ## 3 使用
@@ -414,6 +446,8 @@ public interface DepService extends BaseService<Dep>{
 
 4 新建一个 Service 实现类 , 继承BaseServiceImpl, 实现DepService接口
 
+​	这里需要在 service 中注入 dao!!!
+
 ```java
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -433,10 +467,5 @@ public class DepServiceImpl extends BaseServiceImpl<Dep> implements DepService {
     @Autowired
     private DepDao dao;
 
-    @Override
-    public BaseDao<Dep> getBaseDao() {
-        System.out.println("======给父类返回dao======");
-        return this.dao;
-    }
 }
 ```
