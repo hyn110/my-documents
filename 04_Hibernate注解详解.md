@@ -254,7 +254,7 @@ public Long getId() {... }
 
 // uuid作为主键
 @Id
-@GenericGenerator(name = "system-uuid", strategy = "uuid2")
+@GenericGenerator(name = "system-uuid", strategy = "uuid")
 @GeneratedValue(generator = "system-uuid")
 private String id;
 ```
@@ -617,7 +617,6 @@ public class Flight implements Serializable {
   ...
 
 }
-
 ```
 
 其中@JoinColumn 注解是可选的，关键字段默认值和一对一关联的情况相似。列名为：主题的关联属性名 + 下划线 + 被关联端的主键列名。本例中为company_id,因为关联的属性是company,Company的主键为 id.
