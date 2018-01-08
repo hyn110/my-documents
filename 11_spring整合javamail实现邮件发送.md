@@ -78,7 +78,7 @@
 
 ```properties
 mail.host=smtp.qq.com
-# 465或587
+# 465或587  如果使用 ssl 发送的话,端口号为 465 !!
 mail.port=587
 mail.username=100xxx5458@qq.com
 # 授权码(使用第三方客户端发送邮件需要使用授权码而不是登录密码
@@ -192,13 +192,14 @@ public class MailUtil {
             messageHelper.setText(content, true);
 
             //附件内容
-//            messageHelper.addInline("b", new File("E:/logo.png"));
-            for (String path : filePaths) {
-                File file = new File(path);
-                // 这里的方法调用和插入图片是不同的，使用MimeUtility.encodeWord()来解决附件名称的中文问题
-                messageHelper.addAttachment(MimeUtility.encodeWord(file.getName()), file);
+//          messageHelper.addInline("b", new File("E:/logo.png"));
+            if(filePaths!=null&&filePaths.length>0){
+              	for (String path : filePaths) {
+                	File file = new File(path);
+                	// 这里的方法调用和插入图片是不同的，使用MimeUtility.encodeWord()来解决附件名称的中文问题
+                	messageHelper.addAttachment(MimeUtility.encodeWord(file.getName()), file);
+            	}
             }
-
             javaMailSender.send(mailMessage);
         } catch (Exception e) {
             e.printStackTrace();
