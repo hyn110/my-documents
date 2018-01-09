@@ -52,7 +52,7 @@ public class LogAspect {
     private static final Logger logger = LoggerFactory.getLogger(LogAspect.class);
 
 //    String actionMessage = "{userid:userid1,username:username1,action:action1,method:method1,args:args1}";
-    /**日志信息模版,不带换行符*/
+    /**日志信息模版*/
 //    String msgTemplate = "{" +
 //                         "\"useId\": \"userId1\"," +
 //                         "\"username\": \"username1\"," +
@@ -72,14 +72,28 @@ public class LogAspect {
     public void actionPointcut() {
     }
 
+    @Pointcut("execution(* cn.itcast.erp.biz..*.*(..))")
+    public void servicePointcut() {
+    }
 
-    @Around("actionPointcut()")
+    @Pointcut("execution(* cn.itcast.erp.dao..*.*(..))")
+    public void daoPointcut() {
+    }
+
+    @Around("actionPointcut() ||daoPointcut() ||servicePointcut()")
+//    @Around("servicePointcut()")
     public Object recordLog(ProceedingJoinPoint point) throws Throwable {
         // 获取当前系统登录用户
         Emp currentUser = (Emp)ActionContext.getContext().getSession().get("loginUser");
 
         String methodName = point.getSignature()
                                  .getName(); // 获取方法名
+
+        if(methodName.contains("set")){
+            // set  方法不记录
+            return point.proceed(); // 放行
+        }
+
         // 获取拦截到的对象
         Object target = point.getTarget();
 
@@ -100,6 +114,7 @@ public class LogAspect {
         return point.proceed(); // 放行
     }
 }
+
 ```
 
 > 这里时直接复制的项目里的代码,实际使用时按照需求自己修改日志信息模版
