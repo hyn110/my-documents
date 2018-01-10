@@ -66,6 +66,3 @@ Hello, <%= SecurityUtils.getSubject().getPrincipal().toString() %>, how are you 
 
 
 
-```
-
-```
