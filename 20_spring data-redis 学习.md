@@ -4,6 +4,10 @@
 
 [spring data-jpa](https://docs.spring.io/spring-data/jpa/docs/2.0.2.RELEASE/reference/html/)
 
+[Redis 地理位置命令简介](http://blog.csdn.net/opensure/article/details/51375961)
+
+
+
 ## 1 配置
 
 **1 maven 坐标**
@@ -70,7 +74,7 @@ public RedisConnectionFactory jedisConnectionFactory() {
 | 接口                    | 对应的 redis 操作                             |
 | --------------------- | ---------------------------------------- |
 | *Key 类型 Operations*   |                                          |
-| GeoOperations         | Redis geospatial operations like `GEOADD`, `GEORADIUS`,…) |
+| GeoOperations         | Redis 地理位置命令操作 `GEOADD`, `GEORADIUS`,…)  |
 | HashOperations        | Redis hash 操作                            |
 | HyperLogLogOperations | Redis HyperLogLog operations like (`PFADD`, `PFCOUNT`,…) |
 | ListOperations        | 操作 list                                  |
@@ -200,7 +204,7 @@ Data can be stored using various data structures within Redis. You already learn
 2. Using [Redis Repositories](https://docs.spring.io/spring-data/redis/docs/2.0.2.RELEASE/reference/html/#redis.repositories)
 3. Using `HashMapper` and `HashOperations`
 
-### 5.8.1. Hash mappers
+### 4.1 Hash mappers
 
 Hash mappers are converters to map objects to a `Map<K, V>` and back. `HashMapper` is intended for using with Redis Hashes.
 
@@ -239,7 +243,7 @@ public class HashMapping {
 }
 ```
 
-### 5.8.2. Jackson2HashMapper
+### 4.2 Jackson2HashMapper
 
 `Jackson2HashMapper` provides Redis Hash mapping for domain objects using [FasterXML Jackson](https://github.com/FasterXML/jackson). `Jackson2HashMapper` can map data map top-level properties as Hash field names and optionally flatten the structure. Simple types map to simple values. Complex types (nested objects, collections, maps) are represented as nested JSON.
 
@@ -272,3 +276,335 @@ public class Address {
 | address.country | `The North`    |
 
 ​	**注意 : Flattening requires all property names to not interfere with the JSON path. Using dots or brackets in map keys or as property names is not supported using flattening. The resulting hash cannot be mapped back into an Object.**  
+
+## 5 Redis Messaging/PubSub
+
+​	Redis消息机制可以简单的划分为两个方面 : 生产(or发布)消息  和  消费(or订阅)消息 . `RedisTemplate` 主要用于生产消息.
+
+### 1 Sending/Publishing messages
+
+​	RedisTemplate 和 RedisConnection 都可用于发送(发布)消息 . 区别在于 : RedisTemplate 使用可以发送对象 , 而 RedisConnection 必须发送 byte数据 :
+
+```java
+// send message through connection RedisConnection con = ...
+byte[] msg = ...
+byte[] channel = ...
+con.publish(msg, channel); // send message through RedisTemplate
+RedisTemplate template = ...
+template.convertAndSend("hello!", "world");
+```
+
+### 2 Receiving/Subscribing for messages
+
+​	RedisConnection 提供 subscribe() 和 psubscribe() 方法用于开启消息订阅 . 注意消息订阅是阻塞的
+
+​	通过实现 `MessageListener`  接口可实现redis消息订阅
+
+​	**Message Listener Containers**
+
+
+
+​	**MessageListenerAdapter**
+
+## 6 Redis 事务
+
+### 1 SessionCallback 接口
+
+​	[redis事务简介](https://www.jianshu.com/p/361cb9cd13d5)
+
+​	[redis事务简介2](http://blog.csdn.net/wgh1015398431/article/details/53156027)
+
+​		[MULTI](http://redis.cn/commands/multi.html) 开启事务，总是返回OK，[EXEC](http://redis.cn/commands/exec.html) 提交事务，[DISCARD](http://redis.cn/commands/discard.html)放弃事务（放弃提交执行），[WATCH](http://redis.cn/commands/watch.html)监控
+
+​		redis 也支持事务操作,但是redis事务不支持回滚操作,这是与关系型数据库(如mysql)的明显区别
+
+​		RedisTemplate 支持redis 的 exec , discard , watch 操作, 但是redisTemplate 不保证同一个连接的所有操作都执行 , 为了解决这个问题 , Spring Data Redis 提供了 SessionCallback 接口 , 当需要使用 redis 事务操作时 , 可如下操作:
+
+```java
+//execute a transaction
+List<Object> txResults = redisTemplate.execute(new SessionCallback<List<Object>>() {
+  public List<Object> execute(RedisOperations operations) throws DataAccessException {
+    operations.multi();
+    operations.opsForSet().add("key", "value1");
+
+    // This will contain the results of all ops in the transaction
+    return operations.exec();
+  }
+});
+System.out.println("Number of items added to set: " + txResults.get(0));
+```
+
+## 7 管道 Pipelining
+
+​	如果不关注管道命令的返回结果 , 可直接调用 RedisTemplate.execute() 方法,并设置 pipeline 参数为 true 即可 . 如果要获取返回结果可通过 executePiplelined 方法 , 并通过接口 RedisCallback 或 SessionCallback 获取返回值,例如 :
+
+```java
+//pop a specified number of items from a queue
+List<Object> results = stringRedisTemplate.executePipelined(
+  new RedisCallback<Object>() {
+    public Object doInRedis(RedisConnection connection) throws DataAccessException {
+      StringRedisConnection stringRedisConn = (StringRedisConnection)connection;
+      for(int i=0; i< batchSize; i++) {
+        stringRedisConn.rPop("myqueue");
+      }
+    return null;
+  }
+});
+```
+
+## 8 spring cache 支持
+
+​	spring redis 缓存的实现位于包 `org.springframework.data.redis.cache`  , 要使用redis缓存需要在配置中配置 RedisCacheManager :
+
+```java
+@Bean
+public RedisCacheManager cacheManager(RedisConnectionFactory connectionFactory) {
+	return RedisCacheManager.create(connectionFactory);
+}
+```
+​	如果想要对 RedisCacheManager 进行配置,可通过 RedisCacheManagerBuilder 来创建:
+
+```java
+RedisCacheManager cm = RedisCacheManager.builder(connectionFactory)
+	.cacheDefaults(defaultCacheConfig())
+	.initialCacheConfigurations(singletonMap("predefined", defaultCacheConfig().disableCachingNullValues()))
+	.transactionAware()
+	.build();
+```
+
+​	RedisCache 对象的特性 , 比如 key的缓存时间 , 序列化器等可通过 RedisCacheConfigure 进行配置 :
+
+```java
+RedisCacheConfiguration config = RedisCacheConfiguration.defaultCacheConfig()
+    .entryTtl(Duration.ofSeconds(1))
+	.disableCachingNullValues();
+```
+
+​	RedisCacheManger 的读写操作默认是不加锁的 , 所以并不保证操作的原子性 . 如果要加锁 , 可以如下配置 :
+
+```java
+RedisCacheManager cm = RedisCacheManager.build(RedisCacheWriter.lockingRedisCacheWriter())
+	.cacheDefaults(defaultCacheConfig())
+	...
+```
+
+​	RedisCacheManager 的默认配置如下表 :
+
+| Setting             | Value                                    |
+| ------------------- | ---------------------------------------- |
+| Cache Writer        | non locking                              |
+| Cache Configuration | `RedisCacheConfiguration#defaultConfiguration` |
+| Initial Caches      | none                                     |
+| Trasaction Aware    | no                                       |
+
+​	RedisCacheManagerConfig 的默认配置如下:
+
+| Key Expiration     | none                                     |
+| ------------------ | ---------------------------------------- |
+| Cache `null`       | yes                                      |
+| Prefix Keys        | yes                                      |
+| Default Prefix     | the actual cache name                    |
+| Key Serializer     | `StringRedisSerializer`                  |
+| Value Serializer   | `JdkSerializationRedisSerializer`        |
+| Conversion Service | `DefaultFormattingConversionService` with default cache key converters |
+
+## 9 Redis Cluster 集群
+
+​	redis集群需要redis 3.0+ 版本 .
+
+​	spring 提供 RedisClusterConnection 用于连接 redis 集群 , 该对象可通过 RedisClusterConfiguration进行配置,并通过 RedisConnectionFactory 创建 :
+
+```java
+@Component
+@ConfigurationProperties(prefix = "spring.redis.cluster")
+public class ClusterConfigurationProperties {
+
+    /*
+     * spring.redis.cluster.nodes[0] = 127.0.0.1:7379
+     * spring.redis.cluster.nodes[1] = 127.0.0.1:7380
+     * ...
+     */
+    List<String> nodes;
+
+    /**
+     * Get initial collection of known cluster nodes in format {@code host:port}.
+     *
+     * @return
+     */
+    public List<String> getNodes() {
+        return nodes;
+    }
+
+    public void setNodes(List<String> nodes) {
+        this.nodes = nodes;
+    }
+}
+
+@Configuration
+public class AppConfig {
+
+    /**
+     * Type safe representation of application.properties
+     */
+    @Autowired 
+    ClusterConfigurationProperties clusterProperties;
+
+    public @Bean RedisConnectionFactory connectionFactory() {
+
+        return new JedisConnectionFactory(
+            new RedisClusterConfiguration(clusterProperties.getNodes()));
+    }
+}
+```
+
+`RedisClusterConfiguration`也可以通过 `PropertySource` 进行配置
+
+配置的属性如下 : 
+
+- `spring.redis.cluster.nodes`: Comma delimited list of host:port pairs.
+
+- `spring.redis.cluster.max-redirects`: Number of allowed cluster redirections.
+
+  使用示例 :
+
+```java
+RedisClusterConnection connection = connectionFactory.getClusterConnnection();
+
+connection.set("foo", value);         // slot: 12182
+connection.set("{foo}.bar", value);   // slot: 12182
+connection.set("bar", value);         // slot:  5461
+
+connection.mGet("foo", "{foo}.bar");                                           
+
+connection.mGet("foo", "bar");                 
+```
+
+```java
+ClusterOperations clusterOps = redisTemplate.opsForCluster();
+clusterOps.shutdown(NODE_7379);  
+```
+
+## 10 spring 整合 redis 集群配置
+
+​	applicationContext-rediscluster.xml
+
+```xml
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:aop="http://www.springframework.org/schema/aop"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+        http://www.springframework.org/schema/beans/spring-beans-3.1.xsd
+        http://www.springframework.org/schema/aop 
+        http://www.springframework.org/schema/aop/spring-aop-3.0.xsd
+        http://www.springframework.org/schema/context 
+        http://www.springframework.org/schema/context/spring-context-3.0.xsd">
+	
+	<context:component-scan base-package="com"/>
+
+    <aop:aspectj-autoproxy proxy-target-class="true"/>
+    
+	<context:property-placeholder location="classpath:*.properties"/>
+
+	
+	<bean id="poolConfig" class="redis.clients.jedis.JedisPoolConfig">  
+        <property name="maxIdle" value="1" /> 
+        <property name="maxTotal" value="5" /> 
+        <property name="blockWhenExhausted" value="true" /> 
+        <property name="maxWaitMillis" value="30000" /> 
+        <property name="testOnBorrow" value="true" />  
+    </bean> 
+	
+	<bean id="jedisConnFactory" class="org.springframework.data.redis.connection.jedis.JedisConnectionFactory">
+	    <!--配置集群-->
+            <constructor-arg name="clusterConfig" ref="redisClusterConfig" />
+        </bean> 
+	     
+	<!-- redis template definition -->  
+	<bean id="redisTemplate" class="org.springframework.data.redis.core.RedisTemplate">  
+	    <property name="connectionFactory" ref="jedisConnFactory" />
+	    <property name="keySerializer">  
+	        <bean class="org.springframework.data.redis.serializer.StringRedisSerializer" />  
+	    </property>     
+	    <property name="valueSerializer">  
+	        <bean class="org.springframework.data.redis.serializer.JdkSerializationRedisSerializer" />  
+	    </property>  
+	    <property name="hashKeySerializer">    
+	       <bean class="org.springframework.data.redis.serializer.StringRedisSerializer"/>    
+	    </property>  
+	    <property name="hashValueSerializer">  
+	       <bean class="org.springframework.data.redis.serializer.JdkSerializationRedisSerializer"/>    
+	    </property>  
+	</bean> 
+	
+	<bean id="redisClusterConfig" class="org.springframework.data.redis.connection.RedisClusterConfiguration">  
+            <property name="maxRedirects" value="3" />  
+            <property name="clusterNodes">  
+                <set>  
+	           <bean class="org.springframework.data.redis.connection.RedisNode">  
+	               <constructor-arg name="host" value="192.168.*.*"></constructor-arg>   
+	               <constructor-arg name="port" value="6379"></constructor-arg>  
+	           </bean>  
+                   <bean class="org.springframework.data.redis.connection.RedisNode">  
+                       <constructor-arg name="host" value="192.168.*.*"></constructor-arg>   
+                       <constructor-arg name="port" value="6380"></constructor-arg>  
+                   </bean>  
+                   <bean class="org.springframework.data.redis.connection.RedisNode">  
+                       <constructor-arg name="host" value="192.168.*.*"></constructor-arg>   
+                       <constructor-arg name="port" value="6381"></constructor-arg>  
+                   </bean>  
+               </set>  
+           </property>  
+       </bean>  
+</beans>
+```
+
+## 11 RedisTemplate 操作示例
+
+```java
+public static void main(String[] args) {
+        ClassPathXmlApplicationContext appCtx = new ClassPathXmlApplicationContext("spring-redis.xml");
+        final RedisTemplate<String, Object> redisTemplate = appCtx.getBean("redisTemplate",RedisTemplate.class);
+        
+  		//添加一个 key 
+        ValueOperations<String, Object> value = redisTemplate.opsForValue();
+        value.set("lp", "hello word");
+        //获取 这个 key 的值
+        System.out.println(value.get("lp"));
+       
+  
+  	    //添加 一个 hash集合
+        HashOperations<String, Object, Object>  hash = redisTemplate.opsForHash();
+  	    Map<String,Object> map = new HashMap<String,Object>();
+        map.put("name", "lp");
+        map.put("age", "26");
+        hash.putAll("lpMap", map);
+        //获取 map
+        System.out.println(hash.entries("lpMap"));
+  
+  
+        //添加 一个 list 列表
+        ListOperations<String, Object> list = redisTemplate.opsForList();
+        list.rightPush("lpList", "lp");
+        list.rightPush("lpList", "26");
+        //输出 list
+        System.out.println(list.range("lpList", 0, 1));
+  
+  
+        //添加 一个 set 集合
+        SetOperations<String, Object> set = redisTemplate.opsForSet();
+        set.add("lpSet", "lp");
+        set.add("lpSet", "26");
+        set.add("lpSet", "178cm");
+        //输出 set 集合
+        System.out.println(set.members("lpSet"));
+  
+  
+        //添加有序的 set 集合
+        ZSetOperations<String, Object> zset = redisTemplate.opsForZSet();
+        zset.add("lpZset", "lp", 0);
+        zset.add("lpZset", "26", 1);
+        zset.add("lpZset", "178cm", 2);
+        //输出有序 set 集合
+        System.out.println(zset.rangeByScore("lpZset", 0, 2));
+    }
+```

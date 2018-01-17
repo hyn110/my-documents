@@ -567,3 +567,13 @@ SELECT count(DISTINCT job) FROM EMP;
 SELECT avg(sal),stddev(SAL) 标准差,variance(sal) 方差 FROM EMP;
 ```
 
+### 1 单字段分组统计
+
+​	**注意事项 1 :**
+
+![](img/o10.png)
+
+​	**注意事项 2 :**
+
+![](img/o12.png)
+
