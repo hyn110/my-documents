@@ -4,7 +4,7 @@
 
 1. 构建Maven工程
 
-   ```Html
+   ```xml
    <?xml version="1.0" encoding="UTF-8"?>
    <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
    	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
@@ -54,16 +54,14 @@
    			</plugin>
    		</plugins>
    	</build>
-   ```
-
-
    </project>
-
    ```
 
 2. 添加程序入口类
 
-   ```Java
+
+   ```java
+
    package com.example;
 
    import org.springframework.boot.SpringApplication;

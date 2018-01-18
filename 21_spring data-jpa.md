@@ -113,6 +113,11 @@ public interface PagingAndSortingRepository<T, ID extends Serializable>
 ```java
 PagingAndSortingRepository<User, Long> repository = // … get access to a bean
 Page<User> users = repository.findAll(new PageRequest(1, 20));
+
+// 分页并排序查找
+Page<User> page = userReposity.findAll(new PageRequest(1, 4, new Sort(Sort.Direction.ASC, "age")));
+int total = page.getSize();
+List<User> list = page.getContent();
 ```
 
 ### 3 JpaRepository
