@@ -382,3 +382,6 @@ public class JpaTest {
     }
 }
 ```
+# 6 Spring Boot多数据源配置与使用
+
+​	[Spring+MyBatis实现读写分离四种实现方案整理](http://blog.csdn.net/wuyongde_0922/article/details/70655185)
