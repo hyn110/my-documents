@@ -1214,7 +1214,7 @@ spring.cache.type=ehcache
 spring.cache.ehcache.config=classpath:config/another-config.xml
 ```
 
- 	3. 在程序入口类使能缓存 @EnableCaching
+   	3. 在程序入口类使能缓存 @EnableCaching
 
 ```java
 @EnableCaching
@@ -1298,4 +1298,34 @@ JDK (Java Util Logging)：logging.properties
 ​	在`application.properties`配置如下参数控制输出格式 :
 
 - logging.pattern.console：定义输出到控制台的样式（不支持JDK Logger）
-- logging.pattern.file：定义输出到文件的样式（不支持JDK Logger）			
+
+- logging.pattern.file：定义输出到文件的样式（不支持JDK Logger）	
+
+  ​	
+
+## 13 打war包部署到tomcat
+
+​	springboot 默认是以 main() 方法的方式(jar包) 运行的 , 如果向部署到web容器运行 , 可如下处理 :
+
+1. 新建类继承 SpringBootServletInitializer , 并复写configure() 方法	
+
+```java
+public class SpringbootServletInitializer extends SpringBootServletInitializer {
+
+    @Override
+    protected SpringApplicationBuilder configure(SpringApplicationBuilder builder) {
+        return builder.sources(SpringbootApplication.class);
+    }
+
+}
+```
+
+​	注意 : `SpringbootApplication.class`  是 springboot 程序的入口类 , 即 main() 函数所在的类
+
+2. 在pom.xml 中指定打包类型为 war
+
+```xml
+<packaging>war</packaging>
+```
+
+3. 打包并部署到web容器
