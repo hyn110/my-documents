@@ -20,7 +20,7 @@
 
 ​		7 安装FastDFS		…………………………………………………. xxx
 
-** **
+
 
 ​	文档是基于CentOS 6.7环境搭建,所有命令都是以 root 用户操作的
 
@@ -271,7 +271,7 @@ mysql-connector-odbc-5.1.5r1144-7.el6.i686
 MySQL-python-1.2.3-0.3.c1.1.el6.i686
 ```
 
-##### 2 进入安装包目录并解压压缩包
+##### 2 进入安装包目录并解压压缩包sr	
 
 ```shell
 [root@centos-6 src]# cd /usr/local/src
@@ -315,7 +315,7 @@ Preparing...                ########################################### [100%]
    1:mysql-community-client ########################################### [100%]
 ```
 
-> 安装服务端时需要依赖客户端,所以这里先安装mysql客户端
+> 安装服务端时需要依赖客户端,所以这里先安装mysql客户端  ZZZ
 
 ##### 5 安装MySQL服务端
 
@@ -326,6 +326,12 @@ Preparing...                ########################################### [100%]
    1:mysql-community-server ########################################### [100%]
 ```
 
+> 如果出现依赖报错 :  	libsasl2.so.2()(64bit) is needed by mysql-community-server-5.7.19-1.el6.x86_64
+>
+> 可以强制忽略依赖试试 :
+>
+> rpm -ivh mysql-community-server-5.7.19-1.el6.i686.rpm  --force --nodeps
+
 ##### 6 启动MySQL服务
 
 ```Sh
@@ -333,10 +339,15 @@ Preparing...                ########################################### [100%]
 正在启动 mysqld：                                          [确定]
 ```
 
-> 1. MySQL 5.6 版本时服务的名称叫 `mysql` , 但是在 5.7 版本时服务改名为 `mysqld` !!!
+> 1. servMySQL 5.6 版本时服务的名称叫 `mysql` , 但是在 5.7 版本时服务改名为 `mysqld` !!!
 > 2. MySQL 5.6 版本的启动命令为 `service mysql start`
 
 ##### 7 查看MySQL的初始密码
+
+```sh
+[root@localhost my_soft]# grep 'password' /var/log/mysqld.log   ## 搜索临时密码
+2018-01-24T09:10:39.025038Z 1 [Note] A temporary password is generated for root@localhost: QlJsoqv,!6l-
+```
 
 ```javascript
 [root@centos-6 src]# cat /var/log/mysqld.log 
@@ -366,6 +377,8 @@ Server version: 5.7.19
 
 ###### 1 修改root用户密码
 
+​	[mysql密码校验策略](https://www.cnblogs.com/ivictor/p/5142809.html)
+
 ```mysql
 mysql> set password=password('123456');
 Query OK, 0 rows affected, 1 warning (0.00 sec)
@@ -374,6 +387,12 @@ Query OK, 0 rows affected, 1 warning (0.00 sec)
 > 1 将root用户密码修改为 `123456`
 >
 > 2 也可用此命令修改 : `alter user 'root'@'localhost' identified by '123456'` root用户的密码为`123456`
+>
+> PS : 在 centOS7 上,默认不允许修改简单的密码 , 必须先修改密码的策略为 0 , 方可修改,密令如下:
+>
+> `set global validate_password_policy=0;`
+>
+> `set global validate_password_length=4;`   
 
 ​	查看mysql的字符编码集
 
@@ -398,6 +417,8 @@ mysql> show variables like '%char%';
 
 ###### 2 允许root用户远程登录数据库
 
+​	[无法远程登录解决办法](http://www.jb51.net/article/124228.htm)
+
 1. 登录数据库,授权root用户远程登录
 
 ```Mysql
@@ -411,6 +432,8 @@ Query OK, 0 rows affected (0.00 sec)
 > 3. 移除权限 `REVOKE all on *.* from root;`
 
 2. 退出数据库,设置防火墙拦截规则 , 放行 3306 端口
+
+   **centos 6.5 使用 iptables 的放行方式如下 :**
 
 ```Mysql
 mysql> exit   # 退出数据库
@@ -440,6 +463,23 @@ num  target     prot opt source               destination
 
 > iptables防火墙的配置文件存放于：/etc/sysconfig/iptables 
 
+​	**centos 7 的放行方式如下 :**
+
+​	默认情况下 centOS 7 使用的时 FirewallD 防火墙 , 放行方式如下 :
+
+```sh
+# 开放端口
+firewall-cmd --zone=public --add-port=3306/tcp --permanent
+# 重启防火墙
+systemctl restart firewalld.service
+```
+
+> --zone     作用域
+>
+> --add-port=3306/tcp     添加端口 , 格式为 : 端口/通讯协议
+>
+> --permanent    永久生效,没有此参数重启后失效
+
 ###### 3 修改字符编码集
 
 1. 查找mysql的配置文件
@@ -450,8 +490,8 @@ num  target     prot opt source               destination
 /etc/my.cnf
 ```
 
-> 1. 5.7版本配置文件路径为 `/usr/my.cnf`
-> 2. 5.6版本配置文件路径为 `/etc/my.cnf`
+> 1. 5.6版本配置文件路径为 `/usr/my.cnf`
+> 2. 5.7版本配置文件路径为 `/etc/my.cnf`
 
 2. 编辑配置文件 , 添加如下内容
 
