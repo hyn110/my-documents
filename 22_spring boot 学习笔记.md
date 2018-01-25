@@ -1214,7 +1214,7 @@ spring.cache.type=ehcache
 spring.cache.ehcache.config=classpath:config/another-config.xml
 ```
 
-   	3. 在程序入口类使能缓存 @EnableCaching
+       	3. 在程序入口类使能缓存 @EnableCaching
 
 ```java
 @EnableCaching
@@ -1295,13 +1295,74 @@ JDK (Java Util Logging)：logging.properties
 
 ### 	4 设置日志输出格式
 
-​	在`application.properties`配置如下参数控制输出格式 :
+​	在   `application.properties`配置如下参数控制输出格式 :
 
 - logging.pattern.console：定义输出到控制台的样式（不支持JDK Logger）
 
-- logging.pattern.file：定义输出到文件的样式（不支持JDK Logger）	
+  - logging.pattern.file：定义输出到文件的样式（不支持JDK Logger）
 
-  ​	
+
+### 5 日志配置模板
+
+​	logback-spring.xml
+
+```Xml
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<configuration>
+
+    <appender name="consoleLog" class="ch.qos.logback.core.ConsoleAppender">
+        <layout class="ch.qos.logback.classic.PatternLayout">
+            <pattern>
+                %d - %msg%n
+            </pattern>
+        </layout>
+    </appender>
+
+    <!--只输出 info , warn 级别日志(error 级别被过滤掉了)-->
+    <appender name="fileInfoLog" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <level>ERROR</level>
+            <onMatch>DENY</onMatch>
+            <onMismatch>ACCEPT</onMismatch>
+        </filter>
+        <encoder>
+            <pattern>
+                %msg%n
+            </pattern>
+        </encoder>
+        <!--滚动策略-->
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <!--路径-->
+            <fileNamePattern>/Users/huangyunning/Downloads/log/info.%d.log</fileNamePattern>
+        </rollingPolicy>
+    </appender>
+
+    <!--只输出 error 级别日志-->
+    <appender name="fileErrorLog" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>ERROR</level>
+        </filter>
+        <encoder>
+            <pattern>
+                %msg%n
+            </pattern>
+        </encoder>
+        <!--滚动策略-->
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <!--路径-->
+            <fileNamePattern>/Users/huangyunning/Downloads/log/error.%d.log</fileNamePattern>
+        </rollingPolicy>
+    </appender>
+
+    <root level="info">
+        <appender-ref ref="consoleLog" />
+        <appender-ref ref="fileInfoLog" />
+        <appender-ref ref="fileErrorLog" />
+    </root>
+
+</configuration>
+```
 
 ## 13 打war包部署到tomcat
 
