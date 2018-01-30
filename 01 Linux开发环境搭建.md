@@ -24,6 +24,30 @@
 
 ​	文档是基于CentOS 6.7环境搭建,所有命令都是以 root 用户操作的
 
+## 0 自定义命令别名
+
+​	如果某个用户想要定义自己的命令别名，可以将命令添加到用户家目录中的文件.bashrc中,然后重启
+
+```sh
+vim ~/.bashrc
+```
+
+```sh
+alias redis-cli='/usr/local/src/redis/bin/redis-cli'
+alias redis-start='/usr/local/src/redis/bin/redis-server /usr/local/src/redis/redis.conf'
+
+alias tomcat-start='/usr/local/src/tomcat/bin/startup.sh'
+alias tomcat-shutdown='/usr/local/src/tomcat/bin/shutdown.sh'
+
+alias nginx-start='/usr/local/nginx/sbin/ngix'
+alias nginx-reload='/usr/local/nginx/sbin/nginx -s reload'
+alias nginx-test-conf='/usr/local/nginx/sbin/nginx -t'
+
+alias zookeeper-start='/usr/local/src/zookeeper-3.4.10/bin/zkServer.sh start'
+alias zookeeper-stop='/usr/local/src/zookeeper-3.4.10/bin/zkServer.sh stop'
+alias zookeeper-status='/usr/local/src/zookeeper-3.4.10/bin/zkServer.sh status'
+```
+
 ## 1 安装Oracle JDK
 
 ​	软件包版本 `jdk-8u144-linux-i586.tar.gz` , 并将文件上传值 linux 的 `/usr/local/src` 目录下
@@ -123,6 +147,17 @@ java                         mysql-5.7.19-1.el6.i686.rpm-bundle.tar  tomcat
 ```
 
 ##### 3 修改防火墙规则,开放8080端口
+
+​	**centos7 下:**
+
+```sh
+# 开放端口
+firewall-cmd --zone=public --add-port=8080/tcp --permanent
+# 重启防火墙
+systemctl restart firewalld.service
+```
+
+​	**centos 6.5**
 
 1. 添加放行规则并保存,然后重启防火墙
 
@@ -630,6 +665,17 @@ root      9116  1935  0 18:41 pts/0    00:00:00 grep -i redis
 
 ##### 8 修改防火墙拦截规则,放行6379端口
 
+​	**centos7 下:**
+
+```sh
+# 开放端口
+firewall-cmd --zone=public --add-port=6379/tcp --permanent
+# 重启防火墙
+systemctl restart firewalld.service
+```
+
+​	**centos 6.5**
+
 ```sh
 [root@centos-6 redis]# /sbin/iptables -I INPUT -p tcp --dport 6379 -j ACCEPT
 [root@centos-6 redis]# /etc/rc.d/init.d/iptables save
@@ -709,6 +755,16 @@ dataDir=/usr/local/src/zookeeper-3.4.10/data
 
 ##### 5 设置防火墙拦截规则,放行2181端口
 
+​	**centos7 下:**
+
+```sh
+# 开放端口
+firewall-cmd --zone=public --add-port=2181/tcp --permanent
+# 重启防火墙
+systemctl restart firewalld.service
+```
+​	**centos 6.5**
+
 ```Sh
 [root@centos-6 redis]# /sbin/iptables -I INPUT -p tcp --dport 2181 -j ACCEPT
 [root@centos-6 redis]# /etc/rc.d/init.d/iptables save
@@ -753,6 +809,8 @@ Stopping zookeeper ... STOPPED
 
 ## 6 安装nginx
 
+[centos7 安装nginx的两种方式](http://www.jb51.net/article/107966.htm)
+
 #### 1 yum 在线安装
 
 1. 添加 Nginx 仓库的yum 配置
@@ -774,6 +832,10 @@ Stopping zookeeper ... STOPPED
       ```
 
 2. 安装
+
+```sh
+yum  install --installroot=/usr/local/src/ngix  ngix  # 指定安装路径
+```
 
 ```sh
 [root@centos-6 src]# yum install nginx
@@ -899,6 +961,17 @@ drwxr-xr-x. 2 root root 4096 9月   3 06:30 sbin
 ```
 
 ##### 6 修改防火墙规则放行80端口
+
+​	**centos7 下:**
+
+```sh
+# 开放端口
+firewall-cmd --zone=public --add-port=80/tcp --permanent
+# 重启防火墙
+systemctl restart firewalld.service
+```
+
+​	**centos 6.5**
 
 ```Sh
 [root@centos-6 tomcat]# /sbin/iptables -I INPUT -p tcp --dport 80 -j ACCEPT 
@@ -1229,6 +1302,18 @@ root      2249  2170  0 12:16 pts/0    00:00:00 grep storage
 ```
 
 ##### 7 修改防火墙规则
+
+​	**centos7 下:**
+
+```sh
+# 开放端口
+firewall-cmd --zone=public --add-port=22122 /tcp --permanent
+firewall-cmd --zone=public --add-port=23000/tcp --permanent
+# 重启防火墙
+systemctl restart firewalld.service
+```
+
+​	**centos 6.5**
 
 ```Sh
 [root@centos-6 tomcat]# /sbin/iptables -I INPUT -p tcp --dport 22122 -j ACCEPT 

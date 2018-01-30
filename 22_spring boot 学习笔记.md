@@ -173,6 +173,58 @@ public class UserController {
 
 ​	http://localhost:8080/swagger-ui.html
 
+### 5 生成静态api文档
+
+​	使用 `swagger2markup` 插件可以将上面生成的api文档转换成静态文件保存到本地 , 可以通过 maven 插件来实现 , 引入插件坐标
+
+```xml
+<plugin>
+    <groupId>io.github.swagger2markup</groupId>
+    <artifactId>swagger2markup-maven-plugin</artifactId>
+    <version>1.3.1</version>
+    <configuration>
+        <!--指定项目中 swagger2 文档的 url-->
+        <swaggerInput>
+            http://localhost:8080/v2/api-docs
+        </swaggerInput>
+        <!--生成多个文件,放置在指定目录下-->
+        <!--<outputDir>src/docs/asciidoc/generated/all</outputDir>-->
+        <!--生成单个文件,文件名为 api-->
+        <outputFile>src/docs/asciidoc/generated/api</outputFile>
+        <config>
+            <!--指定生成的文档类型,可选 : ASCIIDOC、MARKDOWN、CONFLUENCE-->
+            <swagger2markup.markupLanguage>MARKDOWN</swagger2markup.markupLanguage>
+        </config>
+    </configuration>
+</plugin>
+
+<!--将swagger2markup生成的 asciidoc 文件转成 html 插件-->
+<plugin>
+    <groupId>org.asciidoctor</groupId>
+    <artifactId>asciidoctor-maven-plugin</artifactId>
+    <version>1.5.6</version>
+    <configuration>
+        <!--源文件目录-->
+        <sourceDirectory>src/docs/asciidoc/generated</sourceDirectory>
+        <!--输出目录-->
+        <outputDirectory>src/docs/asciidoc/html</outputDirectory>
+        <backend>html</backend>
+        <sourceHighlighter>coderay</sourceHighlighter>
+        <attributes>
+            <toc>left</toc>
+        </attributes>
+    </configuration>
+</plugin>
+```
+
+> `<swaggerInput>` : 指定文档来源 , 需要根据实际项目配置
+>
+> `<outputFile>` : 指定文档生成后输出到哪个文件 , 也可指定输出到目录(outputDir)
+>
+> `<swagger2markup.markupLanguage>` : 指定生成文档的类型
+
+​	插件添加好后,先运行 swagger2markup 插件 , 在项目里即可看到生成的文档
+
 ## 4 使用 jdbcTemplate 访问数据库
 
 ### 	1 添加 maven 坐标
@@ -1214,7 +1266,7 @@ spring.cache.type=ehcache
 spring.cache.ehcache.config=classpath:config/another-config.xml
 ```
 
-   	3. 在程序入口类使能缓存 @EnableCaching
+       	3. 在程序入口类使能缓存 @EnableCaching
 
 ```java
 @EnableCaching
@@ -1299,9 +1351,9 @@ JDK (Java Util Logging)：logging.properties
 
 - logging.pattern.console：定义输出到控制台的样式（不支持JDK Logger）
 
-- logging.pattern.file：定义输出到文件的样式（不支持JDK Logger）	
+  - logging.pattern.file：定义输出到文件的样式（不支持JDK Logger）
 
-  ​	
+    ​
 
 ## 13 打war包部署到tomcat
 
@@ -1329,3 +1381,9 @@ public class SpringbootServletInitializer extends SpringBootServletInitializer {
 ```
 
 3. 打包并部署到web容器
+
+
+
+
+
+​	
