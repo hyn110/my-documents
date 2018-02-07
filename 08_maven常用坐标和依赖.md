@@ -199,7 +199,89 @@
 </dependency>
 ```
 
+### swagger2
 
+​	用于 spring mvc 生成文档和测试
+
+```xml
+<!--Swagger2 依赖-->
+<dependency>
+    <groupId>io.springfox</groupId>
+    <artifactId>springfox-swagger2</artifactId>
+    <version>2.2.2</version>
+</dependency>
+<dependency>
+    <groupId>io.springfox</groupId>
+    <artifactId>springfox-swagger-ui</artifactId>
+    <version>2.2.2</version>
+</dependency>
+<!-- https://mvnrepository.com/artifact/io.github.swagger2markup/swagger2markup -->
+<dependency>
+    <groupId>io.github.swagger2markup</groupId>
+    <artifactId>swagger2markup</artifactId>
+    <version>1.3.1</version>
+</dependency>
+```
+
+### lombok
+
+​	用于简化bean对象的书写
+
+```xml
+<!-- https://mvnrepository.com/artifact/org.projectlombok/lombok -->
+<dependency>
+    <groupId>org.projectlombok</groupId>
+    <artifactId>lombok</artifactId>
+    <version>1.16.18</version>
+    <scope>provided</scope>
+</dependency>
+```
+
+### dubbo
+
+```xml
+<dependency>
+    <groupId>com.alibaba</groupId>
+    <artifactId>dubbo</artifactId>
+    <version>2.6.0</version>
+</dependency>
+```
+
+### zookeeper
+
+```xml
+<!-- ZK -->
+<dependency>
+    <groupId>org.apache.zookeeper</groupId>
+    <artifactId>zookeeper</artifactId>
+    <version>3.4.9</version>
+    <exclusions>
+        <exclusion>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-log4j12</artifactId>
+        </exclusion>
+    </exclusions>
+</dependency>
+<dependency>
+    <groupId>com.101tec</groupId>
+    <artifactId>zkclient</artifactId>
+    <version>0.2</version>
+    <exclusions>
+        <exclusion>
+            <artifactId>slf4j-api</artifactId>
+            <groupId>org.slf4j</groupId>
+        </exclusion>
+        <exclusion>
+            <artifactId>log4j</artifactId>
+            <groupId>log4j</groupId>
+        </exclusion>
+        <exclusion>
+            <artifactId>slf4j-log4j12</artifactId>
+            <groupId>org.slf4j</groupId>
+        </exclusion>
+    </exclusions>
+</dependency>
+```
 
 ## 2 maven 插件
 
@@ -275,7 +357,48 @@
 </plugin>
 ```
 
+### 5 swagger2markup-maven-plugin
 
+​	通过maven 插件将 swagger 文档生成静态文件保存到磁盘
+
+```xml
+<plugin>
+    <groupId>io.github.swagger2markup</groupId>
+    <artifactId>swagger2markup-maven-plugin</artifactId>
+    <version>1.3.1</version>
+    <configuration>
+        <!--指定项目中 swagger2 文档的 url-->
+        <swaggerInput>
+            http://localhost:8080/v2/api-docs
+        </swaggerInput>
+        <!--生成多个文件,放置在指定目录下-->
+        <!--<outputDir>docs/asciidoc/generated/all</outputDir>-->
+        <!--生成单个文件,文件名为 api-->
+        <outputFile>docs/asciidoc/generated/api</outputFile>
+        <config>
+            <!--指定生成的文档类型,可选 : ASCIIDOC、MARKDOWN、CONFLUENCE-->
+            <swagger2markup.markupLanguage>MARKDOWN</swagger2markup.markupLanguage>
+        </config>
+    </configuration>
+</plugin>
+<!--将swagger2markup生成的 asciidoc 文件转成 html 插件-->
+<plugin>
+    <groupId>org.asciidoctor</groupId>
+    <artifactId>asciidoctor-maven-plugin</artifactId>
+    <version>1.5.6</version>
+    <configuration>
+        <!--源文件目录-->
+        <sourceDirectory>docs/asciidoc/generated</sourceDirectory>
+        <!--输出目录-->
+        <outputDirectory>docs/asciidoc/html</outputDirectory>
+        <backend>html</backend>
+        <sourceHighlighter>coderay</sourceHighlighter>
+        <attributes>
+            <toc>left</toc>
+        </attributes>
+    </configuration>
+</plugin>
+```
 
 ## 3 常用的配置文件模版
 
@@ -398,6 +521,66 @@ log4j.rootLogger=info, stdout
 	-->
 </configuration>
 ```
+
+
+```xml
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<configuration>
+
+    <appender name="consoleLog" class="ch.qos.logback.core.ConsoleAppender">
+        <layout class="ch.qos.logback.classic.PatternLayout">
+            <pattern>
+                %d{yyyy-MM-dd HH:mm:ss} %5p %c{1}:%L - %m%n
+            </pattern>
+        </layout>
+    </appender>
+
+    <!--只输出 info , warn 级别日志(error 级别被过滤掉了)-->
+    <appender name="fileInfoLog" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <level>ERROR</level>
+            <onMatch>DENY</onMatch>
+            <onMismatch>ACCEPT</onMismatch>
+        </filter>
+        <encoder>
+            <pattern>
+                %d{yyyy-MM-dd HH:mm:ss} %5p %c{1}:%L - %m%n
+            </pattern>
+        </encoder>
+        <!--滚动策略-->
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <!--路径-->
+            <fileNamePattern>dinnermall_log/info.%d.log</fileNamePattern>
+        </rollingPolicy>
+    </appender>
+
+    <!--只输出 error 级别日志-->
+    <appender name="fileErrorLog" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>ERROR</level>
+        </filter>
+        <encoder>
+            <pattern>
+                %d{yyyy-MM-dd HH:mm:ss} %5p %c{1}:%L - %m%n
+            </pattern>
+        </encoder>
+        <!--滚动策略-->
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <!--路径-->
+            <fileNamePattern>dinnermall_log/error.%d.log</fileNamePattern>
+        </rollingPolicy>
+    </appender>
+
+    <root level="info">
+        <appender-ref ref="consoleLog" />
+        <appender-ref ref="fileInfoLog" />
+        <appender-ref ref="fileErrorLog" />
+    </root>
+
+</configuration>
+```
+
 ### 3 c3p0连接池
 
 ```xml
@@ -599,3 +782,5 @@ log4j.rootLogger=info, stdout
 ```
 
 
+
+## 4 java对象配置类

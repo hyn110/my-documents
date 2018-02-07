@@ -1383,7 +1383,154 @@ public class SpringbootServletInitializer extends SpringBootServletInitializer {
 3. 打包并部署到web容器
 
 
+## 14 使用dubbo
 
+​	[dubbo-spring-boot-project](https://github.com/dubbo/dubbo-spring-boot-project)
 
+​	[Springboot 整合 Dubbo/ZooKeeper 详解 SOA 案例](https://www.bysocket.com/?p=1681)
 
-​	
+### 	1 依赖
+
+```xml
+<properties>
+        <zkclient.version>0.2</zkclient.version>
+        <zookeeper.version>3.4.9</zookeeper.version>
+</properties>
+
+<!--13 引入dubbo-->
+<dependency>
+    <groupId>com.alibaba.boot</groupId>
+    <artifactId>dubbo-spring-boot-starter</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+</dependency>
+<!-- ZK -->
+<dependency>
+    <groupId>org.apache.zookeeper</groupId>
+    <artifactId>zookeeper</artifactId>
+    <version>${zookeeper.version}</version>
+    <exclusions>
+        <exclusion>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-log4j12</artifactId>
+        </exclusion>
+    </exclusions>
+</dependency>
+<dependency>
+    <groupId>com.101tec</groupId>
+    <artifactId>zkclient</artifactId>
+    <version>${zkclient.version}</version>
+    <exclusions>
+        <exclusion>
+            <artifactId>slf4j-api</artifactId>
+            <groupId>org.slf4j</groupId>
+        </exclusion>
+        <exclusion>
+            <artifactId>log4j</artifactId>
+            <groupId>log4j</groupId>
+        </exclusion>
+        <exclusion>
+            <artifactId>slf4j-log4j12</artifactId>
+            <groupId>org.slf4j</groupId>
+        </exclusion>
+    </exclusions>
+</dependency>
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-actuator</artifactId>
+</dependency>
+```
+
+​	当坐标不能使用时,添加下列仓库
+
+```xml
+<!--dubbo 不识别时,指定仓库-->
+<repositories>
+    <repository>
+        <id>sonatype-nexus-snapshots</id>
+        <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+        <releases>
+            <enabled>false</enabled>
+        </releases>
+        <snapshots>
+            <enabled>true</enabled>
+        </snapshots>
+    </repository>
+</repositories>
+```
+
+### 	2 配置服务暴露
+
+​	在 application.properties 中配置 dubbo
+
+```properties
+###### 13 dubbo 服务端配置 ######
+# Base packages to scan Dubbo Components (e.g @Service , @Reference)
+dubbo.scan.basePackages  =com.fmi110.springboot.dubbo.service
+
+# Dubbo Config properties
+## ApplicationConfig Bean 
+dubbo.application.id = dubbo-provider-demo
+dubbo.application.name = dubbo-provider-demo
+
+## ProtocolConfig Bean 远程服务调用的配置
+dubbo.protocol.id = dubbo
+dubbo.protocol.port = 20880
+## 注册中心的配置
+dubbo.registry.id = my-registry
+dubbo.registry.address = zookeeper://192.168.80.132:2181?backup=192.168.80.133:2181,192.168.80.134:2181
+```
+
+> 这里注册中心使用了 zookeeper 集群,需要自行搭建
+
+### 	3 定义接口和实现类,并暴露服务
+
+​	接口 :
+
+```java
+public interface IDubboService {
+    String sayHello(String msg);
+}
+```
+
+​	实现 :
+
+```java
+@Service(
+    //    version = "1.0.0", // 添加版本信息的话,则消费端也必须指定对应的版本信息,否则发现不了服务
+        application = "${dubbo.application.id}",
+        protocol = "${dubbo.protocol.id}",
+        registry = "${dubbo.registry.id}"
+)
+public class DubboService implements IDubboService {
+    @Override
+    public String sayHello(String msg) {
+        return "hello " + msg;
+    }
+}
+```
+
+> 这里通过注解的方式暴露服务
+
+### 	4 消费端配置
+
+```properties
+dubbo.application.id = dubbo-consumer-demo
+dubbo.application.name = dubbo-consumer-demo
+
+## ProtocolConfig Bean 远程服务调用的配置
+dubbo.protocol.id = dubbo
+dubbo.protocol.port = 20880
+## 注册中心的配置
+dubbo.registry.id = my-registry
+dubbo.registry.address = zookeeper://192.168.80.132:2181?backup=192.168.80.133:2181,192.168.80.134:2181
+```
+
+### 	5 注入服务接口
+
+```java
+@Reference(
+        // version = "1.0.0",
+        application = "${dubbo.application.id}",
+        url = "dubbo://localhost:12345")
+private DemoService demoService;
+```

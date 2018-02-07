@@ -8,6 +8,17 @@
 
 ​	spring-task 时 spring3.0以后自主开发的定时任务工具，可以将它比作一个轻量级的Quartz，而且使用起来很简单，除spring相关的包外不需要额外的包，而且支持注解和配置文件两种 . 下面演示最简单的继承案例:
 
+### 0 maven 依赖
+
+```xml
+<!--spring 定时任务依赖-->
+<dependency>
+    <groupId>org.springframework</groupId>
+    <artifactId>spring-context-support</artifactId>
+    <version>4.3.12.RELEASE</version>
+</dependency>
+```
+
 ### 1 配置 applicationContext_task.xml
 
 ```xml
@@ -68,6 +79,28 @@ public class MailJob {
 
 ## 2 Quartz 实现
 
+### 0 maven 依赖
+
+```xml
+<dependency>
+    <groupId>org.quartz-scheduler</groupId>
+    <artifactId>quartz</artifactId>
+    <version>2.2.1</version>
+</dependency>
+<dependency>
+    <groupId>org.quartz-scheduler</groupId>
+    <artifactId>quartz-jobs</artifactId>
+    <version>2.2.1</version>
+</dependency>
+
+<!--spring 定时任务依赖-->
+<dependency>
+    <groupId>org.springframework</groupId>
+    <artifactId>spring-context-support</artifactId>
+    <version>4.3.12.RELEASE</version>
+</dependency>
+```
+
 ### 1 提供任务类
 
 ```java
@@ -96,6 +129,8 @@ public class MailJob {
 	<bean id="mailJob" class="cn.itcast.erp.job.MailJob"></bean>
 	<!-- 任务描述 -->
 	<bean id="jobDetail" class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+       <!--指定定时任务的对象-->
+        <property name="targetObject" ref="mailJob"/>
 		<!-- 调用 的方法 -->
 		<property name="targetMethod" value="doJob"></property>
 		<!-- 禁止并发(多线程), 使用单线程 -->
@@ -120,7 +155,6 @@ public class MailJob {
 	
 </beans>
 	
-
 ```
 
 ### 3 将配置文件和任务类整合到项目中

@@ -16,6 +16,13 @@
     <version>2.2.1</version>
 </dependency>
 
+<!--spring 定时任务依赖-->
+<dependency>
+    <groupId>org.springframework</groupId>
+    <artifactId>spring-context-support</artifactId>
+    <version>4.3.12.RELEASE</version>
+</dependency>
+
 <dependency>
     <groupId>org.slf4j</groupId>
     <artifactId>slf4j-log4j12</artifactId>
