@@ -53,6 +53,105 @@
 
 ### spring
 
+#### 0 mvc 全家桶
+
+```xml
+<dependency>
+    <artifactId>spring-context</artifactId>
+    <groupId>org.springframework</groupId>
+    <version>4.3.12.RELEASE</version>
+</dependency>
+<!--javaMail 邮件发送,定时任务等的支持-->
+<dependency>
+    <groupId>org.springframework</groupId>
+    <artifactId>spring-context-support</artifactId>
+    <version>4.3.12.RELEASE</version>
+</dependency>
+<dependency>
+    <groupId>org.springframework</groupId>
+    <artifactId>spring-webmvc</artifactId>
+    <version>4.3.12.RELEASE</version>
+</dependency>
+<!--springMVC 实现文件上传需要的依赖-->
+<dependency>
+    <groupId>commons-fileupload</groupId>
+    <artifactId>commons-fileupload</artifactId>
+    <version>1.3.1</version>
+</dependency>
+<!--springMVC 自动将对象转为 json 需要的依赖-->
+<dependency>
+    <groupId>com.fasterxml.jackson.core</groupId>
+    <artifactId>jackson-databind</artifactId>
+    <version>2.9.0</version>
+</dependency>
+<!-- spring MVC 数据格式化 @DateTimeFormat @NumberFormat 需要的依赖 -->
+<dependency>
+    <groupId>joda-time</groupId>
+    <artifactId>joda-time</artifactId>
+    <version>2.9.9</version>
+</dependency>
+<dependency>
+    <groupId>org.springframework</groupId>
+    <artifactId>spring-orm</artifactId>
+    <version>4.3.12.RELEASE</version>
+</dependency>
+
+<!--切面相关-->
+<dependency>
+    <groupId>org.springframework</groupId>
+    <artifactId>spring-aspects</artifactId>
+    <version>4.3.12.RELEASE</version>
+</dependency>
+<!--提供 xml 与对象之间转换的支持-->
+<dependency>
+    <groupId>org.springframework</groupId>
+    <artifactId>spring-oxm</artifactId>
+    <version>4.3.12.RELEASE</version>
+</dependency>
+<dependency>
+    <groupId>org.springframework</groupId>
+    <artifactId>spring-test</artifactId>
+    <version>4.3.12.RELEASE</version>
+    <scope>test</scope>
+</dependency>
+<!-- https://mvnrepository.com/artifact/junit/junit -->
+<dependency>
+    <groupId>junit</groupId>
+    <artifactId>junit</artifactId>
+    <version>4.12</version>
+    <scope>test</scope>
+</dependency>
+
+<!-- base64 编码 -->
+<dependency>
+    <groupId>commons-codec</groupId>
+    <artifactId>commons-codec</artifactId>
+    <version>1.11</version>
+</dependency>
+
+<!--工具类-->
+<dependency>
+    <groupId>org.apache.commons</groupId>
+    <artifactId>commons-lang3</artifactId>
+    <version>3.5</version>
+</dependency>
+
+<dependency>
+    <groupId>javax.servlet</groupId>
+    <artifactId>servlet-api</artifactId>
+    <version>2.4</version>
+    <scope>provided</scope>
+</dependency>
+<dependency>
+    <groupId>javax.servlet</groupId>
+    <artifactId>jsp-api</artifactId>
+    <version>2.0</version>
+    <scope>provided</scope>
+</dependency>
+```
+
+
+
 #### 1 核心库
 
 ```xml
@@ -352,7 +451,7 @@
         <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-compiler-plugin</artifactId>
-            <version>3.5.1</version>
+            <version>3.6.2</version>
             <configuration>
                 <!-- 配置使用的 jdk 版本 -->
                 <target>1.8</target>
@@ -417,7 +516,7 @@
             <!--插件单独指定依赖驱动jar,否则报找不到驱动异常-->
             <groupId>mysql</groupId>
             <artifactId>mysql-connector-java</artifactId>
-            <version>5.1.39</version>
+            <version>5.1.40</version>
         </dependency>
     </dependencies>
 </plugin>
@@ -869,10 +968,220 @@ log4j.rootLogger=info, stdout
 
 # system ignore
 .DS_Store
-Thumbs.db 
+Thumbs.db
 
 # maven output ignore
 target/
+```
+
+### 8 springmvc-config.xml
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:mvc="http://www.springframework.org/schema/mvc"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+                        http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
+                        http://www.springframework.org/schema/mvc
+                        http://www.springframework.org/schema/mvc/spring-mvc-4.0.xsd
+                        http://www.springframework.org/schema/context
+                        http://www.springframework.org/schema/context/spring-context-4.0.xsd">
+    <!-- 设置使用注解的类所在的jar包 -->
+    <context:component-scan base-package="com.fmi110.mmall.controller"/>
+    <mvc:annotation-driven/>
+    <!--静态资源交给 defaultServlet 处理,否则访问静态资源会 404-->
+    <mvc:default-servlet-handler/>
+
+    <!--spring 整合 swagger2-->
+    <bean id="swagger2Config"
+          class="springfox.documentation.swagger2.configuration.Swagger2DocumentationConfiguration"/>
+    <mvc:resources location="classpath*:/META-INF/resources/" mapping="swagger-ui.html"/>
+    <mvc:resources location="classpath*:/META-INF/resources/webjars/" mapping="/webjars/**"/>
+</beans>
+```
+
+### 9 applicationContext.xml  (ssm)
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+       http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+		http://www.springframework.org/schema/context
+		http://www.springframework.org/schema/context/spring-context-4.2.xsd
+		http://www.springframework.org/schema/tx
+		http://www.springframework.org/schema/tx/spring-tx-4.2.xsd">
+
+    <!-- 声明使用占位符 , 并指定占位符文件位置 -->
+    <context:property-placeholder location="classpath:jdbc.properties"/>
+    <!-- 开启注解扫描 -->
+    <context:component-scan base-package="com.fmi110.mmall.service,com.fmi110.mmall.dao"/>
+
+    <!-- 1 使用druid数据库连接池注册数据源 -->
+    <bean id="dataSource" class="com.alibaba.druid.pool.DruidDataSource">
+        <!-- 基础配置 -->
+        <property name="url" value="${jdbc.url}"></property>
+        <property name="driverClassName" value="${jdbc.driver}"></property>
+        <property name="username" value="${jdbc.user}"></property>
+        <property name="password" value="${jdbc.password}"></property>
+
+        <!-- 关键配置 -->
+        <!-- 初始化时建立物理连接的个数。初始化发生在显示调用init方法，或者第一次getConnection时 -->
+        <property name="initialSize" value="3"/>
+        <!-- 最小连接池数量 -->
+        <property name="minIdle" value="2"/>
+        <!-- 最大连接池数量 -->
+        <property name="maxActive" value="15"/>
+        <!-- 配置获取连接等待超时的时间 -->
+        <property name="maxWait" value="10000"/>
+
+        <!-- 性能配置 -->
+        <!-- 打开PSCache，并且指定每个连接上PSCache的大小 -->
+        <property name="poolPreparedStatements" value="true"/>
+        <property name="maxPoolPreparedStatementPerConnectionSize" value="20"/>
+
+        <!-- 其他配置 -->
+        <!-- 配置间隔多久才进行一次检测，检测需要关闭的空闲连接，单位是毫秒 -->
+        <property name="timeBetweenEvictionRunsMillis" value="60000"/>
+        <!-- 配置一个连接在池中最小生存的时间，单位是毫秒 -->
+        <property name="minEvictableIdleTimeMillis" value="300000"/>
+        <!--   建议配置为true，不影响性能，并且保证安全性。申请连接的时候检测，如果空闲时间大于timeBetweenEvictionRunsMillis，
+                  执行validationQuery检测连接是否有效。 -->
+        <property name="testWhileIdle" value="true"/>
+        <!-- 这里建议配置为TRUE，防止取到的连接不可用 ,申请连接时执行validationQuery检测连接是否有效，做了这个配置会降低性能。-->
+        <property name="testOnBorrow" value="true"/>
+        <!-- 归还连接时执行validationQuery检测连接是否有效，做了这个配置会降低性能 -->
+        <property name="testOnReturn" value="false"/>
+    </bean>
+
+    <bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+        <property name="dataSource" ref="dataSource"/>
+        <!--指定映射文件路径-->
+        <property name="mapperLocations" value="classpath*:mappers/*Mapper.xml"/>
+        <!--分页插件-->
+        <property name="plugins">
+            <array>
+                <bean class="com.github.pagehelper.PageInterceptor">
+                    <!-- pagehelper 5.x 的配置跟 4.x 已经不同,具体参考文档-->
+                    <!-- https://pagehelper.github.io/docs/howtouse/ -->
+                    <property name="properties">
+                        <value>
+                            helperDialect=mysql
+                            reasonable=true
+                            supportMethodsArguments=true
+                            params=count=countSql
+                            autoRuntimeDialect=true
+                        </value>
+                    </property>
+                </bean>
+            </array>
+        </property>
+    </bean>
+    <!--配置mapper接口的扫描-->
+    <bean name="mapperScannerConfiguerer" class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+        <property name="basePackage" value="com.fmi110.mmall.dao"/>
+    </bean>
+
+    <tx:annotation-driven transaction-manager="transactionManager" proxy-target-class="true"/>
+
+    <bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <property name="dataSource" ref="dataSource"/>
+        <property name="rollbackOnCommitFailure" value="true"/>
+    </bean>
+</beans>
+```
+
+### 10 web.xml
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xmlns="http://java.sun.com/xml/ns/javaee"
+         xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd"
+         id="WebApp_ID" version="2.5">
+    <display-name>mmall</display-name>
+    <welcome-file-list>
+        <welcome-file>index.html</welcome-file>
+        <welcome-file>index.htm</welcome-file>
+        <welcome-file>index.jsp</welcome-file>
+    </welcome-file-list>
+
+    <listener>
+        <listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
+    </listener>
+    <context-param>
+        <param-name>contextConfigLocation</param-name>
+        <param-value>classpath*:applicationContext*.xml</param-value>
+    </context-param>
+
+    <filter>
+        <filter-name>characterEncodingFilter</filter-name>
+        <filter-class>org.springframework.web.filter.CharacterEncodingFilter</filter-class>
+        <init-param>
+            <param-name>encoding</param-name>
+            <param-value>UTF-8</param-value>
+        </init-param>
+    </filter>
+    <filter-mapping>
+        <filter-name>characterEncodingFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
+
+    <servlet>
+        <servlet-name>dispatcher</servlet-name>
+        <servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
+        <!--springmvc 配置文件 默认是 WEB-INF 目录下的 [servlet-name]-servlet.xml 文件-->
+        <init-param>
+            <param-name>contextConfigLocation</param-name>
+            <param-value>classpath:springmvc-config.xml</param-value>
+        </init-param>
+        <load-on-startup>1</load-on-startup>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>dispatcher</servlet-name>
+        <!-- "/" 写法不会覆盖默认的servlet , "/*" 会导致静态资源无法访问 , 需要另外配置 -->
+        <url-pattern>/</url-pattern>
+    </servlet-mapping>
+
+    <!--########### druid 数据库连接池监测配置 ################-->
+    <!--阿里 druid 连接池监控-->
+    <servlet>
+        <servlet-name>DruidStatView</servlet-name>
+        <servlet-class>com.alibaba.druid.support.http.StatViewServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>DruidStatView</servlet-name>
+        <url-pattern>/druid/*</url-pattern>
+    </servlet-mapping>
+    <filter>
+        <filter-name>druidWebStatFilter</filter-name>
+        <filter-class>com.alibaba.druid.support.http.WebStatFilter</filter-class>
+        <init-param>
+            <!--排除一些不必要的url-->
+            <param-name>exclusions</param-name>
+            <param-value>/public/*,*.js,*.css,/druid*,*.jsp,*.swf</param-value>
+        </init-param>
+        <init-param>
+            <!--让 druid 从session 中读取 user 的信息 , key 为 user-->
+            <param-name>principalSessionName</param-name>
+            <param-value>user</param-value>
+        </init-param>
+        <init-param>
+            <!--配置profileEnable能够监控单个url调用的sql列表-->
+            <param-name>profileEnable</param-name>
+            <param-value>true</param-value>
+        </init-param>
+    </filter>
+    <filter-mapping>
+        <filter-name>druidWebStatFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
+</web-app>
 ```
 
 

@@ -159,7 +159,7 @@ pasv_enable=YES
    当需要传送数据时，客户端在命令链路上用 PORT命令告诉服务器：“我打开了端口，你过来连接我”。于是服务器从20端口向客户端的端口发送连接请求，建立一条数据链路来传送数据。
 
 
-2. PASV（被动）方式的连接过程是：客户端向服务器的FTP端口（默认是21）发送连接请求，服务器接受连接，建立一条命令链路。 
+1. PASV（被动）方式的连接过程是：客户端向服务器的FTP端口（默认是21）发送连接请求，服务器接受连接，建立一条命令链路。 
 
    当需要传送数据时，服务器在命令链路上用 PASV命令告诉客户端：“我打开了端口，你过来连接我”。于是客户端向服务器的端口发送连接请求，建立一条数据链路来传送数据。
 
@@ -658,7 +658,7 @@ CREATE TABLE `mmall_pay_info` (
 ) ENGINE=InnoDB AUTO_INCREMENT=61 DEFAULT CHARSET=utf8;
 ```
 
-### 6 产品表
+### 6 商品表
 
 ```mysql
 CREATE TABLE `mmall_product` (
@@ -935,7 +935,7 @@ CREATE TABLE `mmall_user` (
 </dependency>
 ```
 
-#### 8 工具类
+#### 8 常用工具依赖
 
 ```xml
 <!--工具类-->
@@ -965,6 +965,12 @@ CREATE TABLE `mmall_user` (
     <groupId>org.hashids</groupId>
     <artifactId>hashids</artifactId>
     <version>1.0.1</version>
+</dependency>
+<!-- base64 编码 -->
+<dependency>
+    <groupId>commons-codec</groupId>
+    <artifactId>commons-codec</artifactId>
+    <version>1.11</version>
 </dependency>
 ```
 
@@ -1039,6 +1045,7 @@ CREATE TABLE `mmall_user` (
         <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-compiler-plugin</artifactId>
+            <version>3.6.2</version>
             <configuration>
                 <source>1.8</source>
                 <target>1.8</target>
@@ -1199,23 +1206,23 @@ CREATE TABLE `mmall_user` (
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xmlns:mvc="http://www.springframework.org/schema/mvc"
        xmlns:context="http://www.springframework.org/schema/context"
-       xmlns:aop="http://www.springframework.org/schema/aop"
-       xmlns:tx="http://www.springframework.org/schema/tx"
        xsi:schemaLocation="http://www.springframework.org/schema/beans
                         http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
                         http://www.springframework.org/schema/mvc
                         http://www.springframework.org/schema/mvc/spring-mvc-4.0.xsd
                         http://www.springframework.org/schema/context
-                        http://www.springframework.org/schema/context/spring-context-4.0.xsd
-                        http://www.springframework.org/schema/aop
-                        http://www.springframework.org/schema/aop/spring-aop-4.0.xsd
-                        http://www.springframework.org/schema/tx
-                        http://www.springframework.org/schema/tx/spring-tx-4.0.xsd">
+                        http://www.springframework.org/schema/context/spring-context-4.0.xsd">
     <!-- 设置使用注解的类所在的jar包 -->
-    <context:component-scan base-package="com.fmi110.mmall.controller" />
+    <context:component-scan base-package="com.fmi110.mmall.controller"/>
     <mvc:annotation-driven/>
     <!--静态资源交给 defaultServlet 处理,否则访问静态资源会 404-->
     <mvc:default-servlet-handler/>
+
+    <!--spring 整合 swagger2-->
+    <bean id="swagger2Config"
+          class="springfox.documentation.swagger2.configuration.Swagger2DocumentationConfiguration"/>
+    <mvc:resources location="classpath*:/META-INF/resources/" mapping="swagger-ui.html"/>
+    <mvc:resources location="classpath*:/META-INF/resources/webjars/" mapping="/webjars/**"/>
 </beans>
 ```
 
@@ -1279,7 +1286,7 @@ CREATE TABLE `mmall_user` (
     <bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
         <property name="dataSource" ref="dataSource"/>
         <!--指定映射文件路径-->
-        <property name="mapperLocations" value="classpath*:mappers/CartMapper.xml"/>
+        <property name="mapperLocations" value="classpath*:mappers/*Mapper.xml"/>
         <!--分页插件-->
         <property name="plugins">
             <array>
@@ -1580,7 +1587,9 @@ target/
     </context>
 </generatorConfiguration>
 ```
-# 9 用户模块
+## 9 用户模块
+
+### 1 模块功能
 
 1 模块接口
 
@@ -1592,8 +1601,8 @@ target/
 | 2    | 注册                  |      |
 | 3    | 检查用户名是否有效           |      |
 | 4    | 获取用户登录信息            |      |
-| 5    | 忘记密码                |      |
-| 6    | 提示忘记密码问题答案          |      |
+| 5    | 忘记密码,获取问题           |      |
+| 6    | 验证忘记密码问题答案          |      |
 | 7    | 忘记密码的重置密码           |      |
 | 8    | 登录状态的重置密码           |      |
 | 9    | 登录状态更新个人信息          |      |
@@ -1610,11 +1619,500 @@ target/
 
 2 概念  
 
- 	1. 横向越权 : 攻击者尝试访问同权限级别的用户的资源(a用户访问b用户的订单)
-	2. 纵向越权 : 低级别用户访问高级别权限用户的资源
+       	1. 横向越权 : 攻击者尝试访问同权限级别的用户的资源(a用户访问b用户的订单)
+     	2. 纵向越权 : 低级别用户访问高级别权限用户的资源
 
 3 约定
 
 ​	1.响应返回码  status :  0 -- 请求成功 ,  非0 --- 请求失败
 
-​	
+### 2 业务层接口定义
+
+```java
+package com.fmi110.mmall.service;
+
+import com.fmi110.mmall.commons.ServerResponse;
+import com.fmi110.mmall.pojo.User;
+
+/**
+ * @author fmi110
+ * @Description: 用户模块的业务接口
+ * @Date 2018/2/9 14:39
+ */
+public interface IUserService {
+    /**
+     * 登录
+     * <ol>
+     * 		<li>校验用户名是否存在</li>
+     * 		<li>检验用户名和密码是否正确</li>
+     * </ol>
+     *
+     * @param username
+     * @param password
+     * @return
+     */
+    ServerResponse<User> login(String username, String password);
+
+    /**
+     * 注册
+     * <ol>
+     *     <li>检验用户名是否已存在</li>
+     *     <li>校验邮箱是否已存在</li>
+     *     <li>用户密码加密处理</li>
+     *     <li>保存用户到数据库</li>
+     * </ol>
+     * @param user
+     * @return
+     */
+    ServerResponse<String> register(User user);
+
+    /**
+     *  检查用户名或者邮箱是否有效
+     * @param str
+     * @param type
+     * @return
+     */
+    ServerResponse<String> checkValid(String str, String type);
+
+    /**
+     * 忘记密码的提示问题
+     * <ol>
+     *     <li>校验用户名是否存在</li>
+     *     <li>根据用户名获取问题</li>
+     * </ol>
+     * @param username
+     * @return
+     */
+    ServerResponse selectQuestion(String username);
+
+    /**
+     * 检查忘记密码问题答案是否正确
+     *  <ol>
+     *      <li>验证问题答案是否正确</li>
+     *      <li>随机生成一个 token 字符串,用于修改密码时校验</li>
+     *  </ol>
+     * @param username
+     * @param question
+     * @param answer
+     * @return
+     */
+    ServerResponse<String> checkAnswer(String username, String question, String answer);
+
+    /**
+     * 忘记密码的重置密码
+     * <ol>
+     *     <li>校验前端传的token不为空</li>
+     *     <li>校验前端传的token和后台的token是否一致</li>
+     *     <li>加密前端传输的密码,然后更新密码</li>
+     * </ol>
+     * @param username
+     * @param passwordNew
+     * @param forgetToken 忘记密码的问题的答案
+     * @return
+     */
+    ServerResponse<String> forgetResetPassword(String username, String passwordNew, String forgetToken);
+
+    /**
+     * 登录状态下重置密码
+     * <ol>
+     *     <li>检验旧密码正确,防止横向越权</li>
+     *     <li>加密密码,然后更新</li>
+     * </ol>
+     * @param passwordOld
+     * @param passwordNew
+     * @param user
+     * @return
+     */
+    ServerResponse<String> resetPassword(String passwordOld, String passwordNew, User user);
+
+    /**
+     * 更新用户信息 , 这里业务设定为 : 不修改用户名,不修改密码
+     * <ol>
+     *     <li>校验用户是否存在</li>
+     *     <li>校验新邮箱是否可用</li>
+     *     <li>更新用户信息</li>
+     * </ol>
+     * @param user
+     * @return
+     */
+    ServerResponse<User> updateInformation(User user);
+
+    /**
+     * 获取用户信息
+     * <ol>
+     *     <li>用户不存在时,提示不存在</li>
+     *     <li>清除用户密码,返回用户信息</li>
+     * </ol>
+     * @param userId
+     * @return
+     */
+    ServerResponse<User> getInformation(Integer userId);
+
+    /**
+     * 校验是否时管理员
+     * @param user
+     * @return
+     */
+    ServerResponse checkAdminRole(User user);
+}
+
+```
+
+### 3 控制层接口定义
+
+```java
+package com.fmi110.mmall.controller.portal;
+
+import com.fmi110.mmall.commons.Const;
+import com.fmi110.mmall.commons.ServerResponse;
+import com.fmi110.mmall.pojo.User;
+import com.fmi110.mmall.service.IUserService;
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiImplicitParam;
+import io.swagger.annotations.ApiImplicitParams;
+import io.swagger.annotations.ApiOperation;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
+import org.springframework.web.bind.annotation.*;
+import springfox.documentation.annotations.ApiIgnore;
+
+import javax.servlet.http.HttpSession;
+
+/**
+ * @author fmi110
+ * @Description: 用户模块
+ * @Date 2018/2/9 17:30
+ */
+@Api(description = "用户模块-门户")
+@RestController
+@RequestMapping(value = "/user")
+@Slf4j
+public class UserController {
+    @Autowired
+    IUserService userService;
+
+    @ApiOperation(value = "登录", httpMethod = "POST", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
+    @ApiImplicitParams({
+                               @ApiImplicitParam(name = "username", value = "用户名", paramType = "form"),
+                               @ApiImplicitParam(name = "password", value = "用户密码", paramType = "form")
+                       })
+    @RequestMapping(value = "/login", method = RequestMethod.POST)
+    public ServerResponse login(String username, String password, @ApiIgnore HttpSession session) {
+        ServerResponse<User> response = userService.login(username, password);
+        if (response.isSuccess()) {
+            session.setAttribute(Const.CURRENT_USER, response.getData());
+        }
+        return response;
+    }
+
+//--------------------------------------------------------------------------------------------------------  
+  
+    @ApiOperation(value = "注册")
+    @ApiImplicitParam(name = "user", value = "用户信息实体", dataType = "User")
+    @PostMapping("/register")
+    public ServerResponse register(@ModelAttribute User user) {
+        /**
+         * todo : 使用数据校验,限定字段不能为空  validate
+         */
+        return userService.register(user);
+    }
+
+//--------------------------------------------------------------------------------------------------------    
+  
+    @ApiOperation(value = "检验数据是否可用")
+    @ApiImplicitParams({
+                               @ApiImplicitParam(name = "data", value = "要检验的数据", paramType = "form"),
+                               @ApiImplicitParam(name = "type", value = "username 或 email", paramType = "form")
+                       })
+    @PostMapping("/check_valid")
+  
+    public ServerResponse checkValid(String data, String type) {
+        return userService.checkValid(data, type);
+    }
+
+//--------------------------------------------------------------------------------------------------------  
+  
+    @ApiOperation(value = "获取用户信息")
+    @PostMapping("get_user_info")
+    public ServerResponse getUserInfo(@ApiIgnore HttpSession session) {
+        User user = (User) session.getAttribute(Const.CURRENT_USER);
+        if (user != null) {
+            return userService.getInformation(user.getId());
+        }
+        return ServerResponse.createByErrorMessage("用户未登录");
+    }
+
+//--------------------------------------------------------------------------------------------------------   
+  
+    @ApiOperation(value = "获取忘记密码设置的问题")
+    @ApiImplicitParam(name = "username", value = "用户名", paramType = "form")
+    @PostMapping("forget_get_question")
+    public ServerResponse forgetGetQuestion(String username) {
+        return userService.selectQuestion(username);
+    }
+
+//--------------------------------------------------------------------------------------------------------    
+  
+    @ApiOperation(value = "校验问题答案是否正确")
+    @ApiImplicitParams({
+                               @ApiImplicitParam(name = "username", value = "用户名", paramType = "form"),
+                               @ApiImplicitParam(name = "question", value = "忘记密码的问题", paramType = "form"),
+                               @ApiImplicitParam(name = "answer", value = "忘记密码的问题的答案", paramType = "form")
+                       })
+    @PostMapping("forget_check_answer")
+    public ServerResponse forgetCheckAnswer(String username,
+                                            String question,
+                                            String answer) {
+        return userService.checkAnswer(username, question, answer);
+    }
+
+//--------------------------------------------------------------------------------------------------------    
+  
+    @ApiOperation(value = "忘记密码情况下的重置密码")
+    @ApiImplicitParams({
+                               @ApiImplicitParam(name = "username", value = "用户名", paramType = "form"),
+                               @ApiImplicitParam(name = "passwordNew", value = "新密码", paramType = "form"),
+                               @ApiImplicitParam(name = "forgetToken", value = "验证忘记问题答案正确后,后台返回的token",
+                                                 paramType = "form")
+                       })
+    public ServerResponse forgetResetPassword(String username, String passwordNew, String forgetToken) {
+        return userService.forgetResetPassword(username, passwordNew, forgetToken);
+    }
+
+//--------------------------------------------------------------------------------------------------------    
+  
+    @ApiOperation(value = "登录状态下重置密码")
+    @ApiImplicitParams({
+                               @ApiImplicitParam(name = "passwordOld", value = "旧密码", paramType = "form"),
+                               @ApiImplicitParam(name = "passwordNew", value = "新密码", paramType = "form")
+
+                       })
+    @PostMapping("reset_password")
+    public ServerResponse resetPwd(@ApiIgnore HttpSession session, String passwordOld, String passwordNew) {
+        User user = (User) session.getAttribute(Const.CURRENT_USER);
+        if (user == null) {
+            return ServerResponse.createByErrorMessage("用户未登录,请先登录");
+        }
+        return userService.resetPassword(passwordOld, passwordNew, user);
+    }
+
+//--------------------------------------------------------------------------------------------------------    
+  
+    @ApiOperation(value = "更新用户信息")
+    @ApiImplicitParam(name = "user", value = "用户信息实体", dataType = "User")
+    @PostMapping("update_information")
+    public ServerResponse updateInformation(@ApiIgnore HttpSession session, @ModelAttribute User user) {
+        User currentUser = (User) session.getAttribute(Const.CURRENT_USER);
+        if (currentUser == null) {
+            return ServerResponse.createByErrorMessage("用户未登录,请先登录");
+        }
+        // 不修改名字和id
+        user.setId(currentUser.getId());
+        user.setUsername(currentUser.getUsername());
+        return userService.updateInformation(user);
+    }
+
+//--------------------------------------------------------------------------------------------------------    
+  
+    @ApiOperation(value = "退出登录")
+    @PostMapping("logout")
+    public ServerResponse logout(@ApiIgnore HttpSession session) {
+        session.removeAttribute(Const.CURRENT_USER);
+        return ServerResponse.createBySuccessMessage("退出成功");
+    }
+
+    @ApiOperation(value = "单纯的测试用,为了让swagger2能显示对象的结构!!!")
+    @GetMapping("zzz")
+    public User test() {
+        return new User();
+    }
+}
+```
+
+## 10 分类模块
+
+### 1 模块功能
+
+| 序号   | 功能                        | url  |
+| ---- | ------------------------- | ---- |
+| 1    | 获取品类子节点                   |      |
+| 2    | 增加节点                      |      |
+| 3    | 修改分类名称                    |      |
+| 4    | 获取当前分类id并递归子节点 categoryId |      |
+
+### 2 业务层接口定义
+
+```java
+package com.fmi110.mmall.service;
+
+
+import com.fmi110.mmall.commons.ServerResponse;
+import com.fmi110.mmall.pojo.Category;
+
+import java.util.List;
+
+
+public interface ICategoryService {
+    /**
+     * 添加商品分类
+     *  <ol>
+     *      <li>确定分类名称可用</li>
+     *      <li>新建一个分类的对象插入,并设置状态可用</li>
+     *  </ol>
+     * @param categoryName
+     * @param parentId
+     * @return
+     */
+    ServerResponse addCategory(String categoryName, Integer parentId);
+
+    /**
+     * 更新分类名称
+     *  <ol>
+     *      <li>判断分类名可用</li>
+     *      <li>更新分类(分类不存在时,没有更新,不用单独判断)</li>
+     *  </ol>
+     * @param categoryId
+     * @param categoryName
+     * @return
+     */
+    ServerResponse updateCategoryName(Integer categoryId, String categoryName);
+
+    /**
+     * 获取指定分类的子分类
+     * @param categoryId
+     * @return
+     */
+    ServerResponse<List<Category>> getChildrenParallelCategory(Integer categoryId);
+
+    /**
+     * 获取当前节点及其子节点的id
+     * @param categoryId
+     * @return
+     */
+    ServerResponse<List<Integer>> selectCategoryAndChildrenById(Integer categoryId);
+
+}
+```
+
+## 11 商品模块
+
+### 1 模块功能
+
+| 序号   | 功能                     | url  |
+| ---- | ---------------------- | ---- |
+| 1    | 保存或更新产品                |      |
+| 2    | 上/下架商品                 |      |
+| 3    | 获取指定商品详情               |      |
+| 4    | 分页获取商品列表               |      |
+| 5    | 搜索商品                   |      |
+| 6    | 根据 商品名称 + 分类 搜索商品,分页返回 |      |
+
+### 2 接口定义
+
+```java
+package com.fmi110.mmall.service;
+
+import com.fmi110.mmall.commons.ServerResponse;
+import com.fmi110.mmall.pojo.Product;
+import com.fmi110.mmall.vo.ProductDetailVo;
+import com.github.pagehelper.PageInfo;
+
+public interface IProductService {
+    /**
+     * 保存或更新产品
+     *  <ol>
+     *      <li>判断产品参数是否为空</li>
+     *      <li>处理产品图片地址,多张图片地址用 "," 分隔</li>
+     *      <li>获取主图地址,这里约定是第一张图片是主图</li>
+     *      <li>参数有 id 时,执行更新操作,否则执行插入操作</li>
+     *  </ol>
+     * @param product
+     * @return
+     */
+    ServerResponse saveOrUpdateProduct(Product product);
+
+    /**
+     * 上/下架商品
+     * @param productId
+     * @param status
+     * @return
+     */
+    ServerResponse<String> setSaleStatus(Integer productId, Integer status);
+
+    /**
+     * 获取指定商品详情
+     *  <ol>
+     *      <li>获取 product 对象</li>
+     *      <li>product 对象 --> productVo</li>
+     *      <li>productVo 添加商品图片服务器地址信息</li>
+     *      <li>productVo 添加商品父节点id</li>
+     *  </ol>
+     * @param productId
+     * @return
+     */
+    ServerResponse<ProductDetailVo> manageProductDetail(Integer productId);
+
+    /**
+     * 分页获取商品列表
+     * @param pageNum
+     * @param pageSize
+     * @return
+     */
+    ServerResponse<PageInfo> getProductList(int pageNum, int pageSize);
+
+    /**
+     * 搜索商品
+     * @param productName
+     * @param productId
+     * @param pageNum
+     * @param pageSize
+     * @return
+     */
+    ServerResponse<PageInfo> searchProduct(String productName, Integer productId, int pageNum, int pageSize);
+
+    /**
+     * 根据 商品名称 + 分类 搜索商品,分页返回
+     *  <ol>
+     *      <li>分类没有时,返回空</li>
+     *      <li>有分类时,需要搜索分类极其子分类</li>
+     *      <li>查询到的是 product , 转为 productListVO</li>
+     *  </ol>
+     *
+     * @param keyword
+     * @param categoryId
+     * @param pageNum
+     * @param pageSize
+     * @param orderBy
+     * @return
+     */
+    ServerResponse<PageInfo> getProductByKeywordCategory(String keyword, Integer categoryId, int pageNum, int pageSize,
+                                                         String orderBy);
+
+}
+```
+
+## 12 购物车模块
+
+### 1 模块功能
+
+|      |          |                       |
+| ---- | -------- | --------------------- |
+| 1    | 添加商品到购物车 |                       |
+| 2    | 修改商品数量   |                       |
+| 3    | 移除商品     |                       |
+| 4    | 清空购物车    | /cancelAllItem.action |
+| 5    | 清除下架商品   |                       |
+|      |          |                       |
+
+
+
+## 13 订单模块
+
+
+
+## 14 支付模块
+
+
+
+## 15 物流模块

@@ -168,6 +168,10 @@ public class UserController {
 > `@ApiImplicitParam`  : 对方法参数进行
 >
 > ​	paramType 的合法值 : path  , body  , header , query , form
+>
+> ​		1 使用 @RequestBody 接收参数时,使用 body
+>
+> @ApiIgnore 直接作用于方法参数上,用于忽略参数(在页面中不显示)
 
 ### 	4 访问api文档
 
