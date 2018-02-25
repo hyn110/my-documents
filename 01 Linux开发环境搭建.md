@@ -1707,11 +1707,146 @@ drwxr-xr-x. 4 root root 4096 10月  7 18:09 configsets
 
 
 
+## 9 tomcat 集群 
 
+### 1 单台机器上部署多个tomcat实例
 
+​	这里在原来机器上增加部署 tomcat_2 和 tomcat_3 实例 ,
 
+1. 复制tomcat文件夹
 
+   将之前部署好的tomcat文件夹,复制两份分别命名为 tomcat_2 和 tomcat_3 , 其父级目录均为 `/usr/local/src`
 
+2. 为 tomcat2 和 tomcat_3 添加环境变量
+
+   编辑 `/etc/profile` 文件 , 添加如下内容 , 保存退出后执行 `source /etc/profile`  , 使其生效
+
+```sh
+export TOMCAT_2_HOME=/usr/local/src/tomcat_2
+export CATALINA_2_HOME=/usr/local/src/tomcat_2
+export CATALINA_2_BASE=/usr/local/src/tomcat_2
+
+export TOMCAT_3_HOME=/usr/local/src/tomcat_3
+export CATALINA_3_HOME=/usr/local/src/tomcat_3
+export CATALINA_3_BASE=/usr/local/src/tomcat_3
+```
+
+3. 修改 catalina.sh 文件
+
+   编辑 `${TOMCAT_X_HOME}/bin/catalina.sh`  文件 ('X' 代表 2 和 3 , 因为这里要配置两个实例) , 在  `# OS specific support.  $var _must_ be set to either true or false.`  的下一行添加如下内容
+
+```sh
+# tomcat_2 的配置
+export CATALINA_BASE=$CATALINA_2_BASE
+export CATALINA_HOME=$CATALINA_2_HOME
+```
+
+​	同理, 在tomcat_3 实例的 catalina.sh 上添加内容 : 
+
+```sh
+export CATALINA_BASE=$CATALINA_3_BASE
+export CATALINA_HOME=$CATALINA_3_HOME
+```
+
+4. 修改端口
+
+   修改 `${TOMCAT_X_HOME}/conf/server.xml` 文件中的 `<Server port=8005 ../>`  `<Connector port=8080 ../>`  `<Connector port=8009 ../>`  三个端口号为未使用的端口 , 这里修改如下 :
+
+   tomcat_2 :
+
+   > `8005  --> 8006`
+   >
+   > `8080  --> 8081`
+   >
+   > `8009  --> 8010`
+
+   tomcat_3 :
+
+   > `8005  --> 8007`
+   >
+   > `8080  --> 8082`
+   >
+   > `8009  --> 8011`
+
+5. 开放端口 8081 和 8082
+
+   centos 7 下的命令 :
+
+```sh
+firewall-cmd --zone=public --add-port=8081/tcp --permanent
+firewall-cmd --zone=public --add-port=8082/tcp --permanent
+
+# 重启防火墙
+systemctl restart firewalld.service
+```
+
+​	上述操作完后 , 即可启动 tomcat_2 和 tomcat_3 并访问
+
+### 2 nginx 实现负载均衡
+
+​	1. 配置nginx
+
+```sh
+[root@localhost local]# mkdir -p /usr/local/nginx/conf/vhost
+[root@localhost local]# vim /usr/local/nginx/conf/nginx.conf
+```
+
+> /usr/local/nginx/conf/vhost  目录用于存放自定义配置的文件
+
+​	在 nginx.conf 的文件中, server 节点后添加如下内容
+
+```sh
+include vhost/*.conf
+```
+
+​	配置后的文件结构大致如下:
+
+```sh
+http
+{
+ server{}
+ include vhost/*.conf   # 增加的内容
+}
+```
+
+2. 在 vhost目录下新建文件 tomcat.loadbalance.conf
+
+   文件内容如下 , 配置了当访问 `www.mmall.com` 时 , 将请求分别转发到 `127.0.0.1:8081`  和 `127.0.0.1:8082`  
+
+```sh
+upstream www.mmall.com{
+        server 127.0.0.1:8081 weight=2;
+        server 127.0.0.1:8082 weight=1;
+}
+
+server {
+    listen 80;
+    autoindex on;
+    server_name www.mmall.com;
+    access_log /usr/local/nginx/logs/access.log combined;
+    index index.html index.htm index.jsp index.php;
+	
+	if ( $query_string ~* ".*[\;'\<\>].*" ){
+        return 404;
+    }
+    location / {
+            proxy_pass http://www.mmall.com;
+            add_header Access-Control-Allow-Origin *;
+     }
+}
+```
+
+​	内容添加并保存后 , 执行配置检查命令 `$NGINX_HOME/sbin/nginx -t` , 如果配置没有问题 ,即可执行 `$NGINX_HOME/sbin/nginx -s reload` 命令 , 重新加载配置文件
+
+3. 修改域名配置 /etc/hosts
+
+   添加如下内容 :
+
+```sh
+127.0.0.1  www.mmall.com	
+```
+
+​	执行完上述操作后 , 访问 `www.mmall.com` 时 , 即可访问服务器的tomcat , 并且请求会按照权重比例分发到不同的tomcat上
 
 
 

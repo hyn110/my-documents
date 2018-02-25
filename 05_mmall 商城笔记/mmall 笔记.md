@@ -2116,3 +2116,582 @@ public interface IProductService {
 
 
 ## 15 物流模块
+
+
+
+## 16 maven 环境隔离  
+
+```sh
+mvn clean package -Dmaven.test.skip=true -Pdev	#使用 dev 环境的配置打包
+mvn clean package -Dmaven.test.skip=true -Pprod	#使用 prod 环境的配置打包
+```
+
+	1. 在<build>节点下添加 <resources> 节点,指定不同环境读取对应的资源文件
+	2. 添加<profiles>节点,配置不同的环境
+
+```xml
+	<build>
+     
+        <resources>
+            <resource>
+                <!-- ${deploy.type} 引用变量的意思,引用 <profiles> 便签里的子标签-->
+                <directory>src/main/resources.${deploy.type}</directory>
+                <excludes>
+                    <exclude>*.jsp</exclude>
+                </excludes>
+            </resource>
+            <!-- 公共资源的目录-->
+            <resource>
+                <directory>src/main/resources</directory>
+            </resource>
+        </resources>
+    </build>
+
+    <profiles>
+        <!--配置dev环境-->
+        <profile>
+            <id>dev</id>
+            <activation>
+                <!--默认使用当前环境-->
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <properties>
+                <deploy.type>dev</deploy.type>
+            </properties>
+        </profile>
+        <!--配置prod环境-->
+        <profile>
+            <id>prod</id>
+            <properties>
+                <deploy.type>prod</deploy.type>
+            </properties>
+        </profile>
+    </profiles>
+```
+
+## 17 tomcat 集群
+
+### 1 单台机器上部署多个tomcat实例
+
+​	这里在原来机器上增加部署 tomcat_2 和 tomcat_3 实例 ,
+
+1. 复制tomcat文件夹
+
+   将之前部署好的tomcat文件夹,复制两份分别命名为 tomcat_2 和 tomcat_3 , 其父级目录均为 `/usr/local/src`
+
+2. 为 tomcat2 和 tomcat_3 添加环境变量
+
+   编辑 `/etc/profile` 文件 , 添加如下内容 , 保存退出后执行 `source /etc/profile`  , 使其生效
+
+```sh
+export TOMCAT_2_HOME=/usr/local/src/tomcat_2
+export CATALINA_2_HOME=/usr/local/src/tomcat_2
+export CATALINA_2_BASE=/usr/local/src/tomcat_2
+
+export TOMCAT_3_HOME=/usr/local/src/tomcat_3
+export CATALINA_3_HOME=/usr/local/src/tomcat_3
+export CATALINA_3_BASE=/usr/local/src/tomcat_3
+```
+
+3. 修改 catalina.sh 文件
+
+   编辑 `${TOMCAT_X_HOME}/bin/catalina.sh`  文件 ('X' 代表 2 和 3 , 因为这里要配置两个实例) , 在  `# OS specific support.  $var _must_ be set to either true or false.`  的下一行添加如下内容
+
+```sh
+# tomcat_2 的配置
+export CATALINA_BASE=$CATALINA_2_BASE
+export CATALINA_HOME=$CATALINA_2_HOME
+```
+
+​	同理, 在tomcat_3 实例的 catalina.sh 上添加内容 : 
+
+```sh
+export CATALINA_BASE=$CATALINA_3_BASE
+export CATALINA_HOME=$CATALINA_3_HOME
+```
+
+4. 修改端口
+
+   修改 `${TOMCAT_X_HOME}/conf/server.xml` 文件中的 `<Server port=8005 ../>`  `<Connector port=8080 ../>`  `<Connector port=8009 ../>`  三个端口号为未使用的端口 , 这里修改如下 :
+
+   tomcat_2 :
+
+   > `8005  --> 8006`
+   >
+   > `8080  --> 8081`
+   >
+   > `8009  --> 8010`
+
+   tomcat_3 :
+
+   > `8005  --> 8007`
+   >
+   > `8080  --> 8082`
+   >
+   > `8009  --> 8011`
+
+5. 开放端口 8081 和 8082
+
+   centos 7 下的命令 :
+
+```sh
+firewall-cmd --zone=public --add-port=8081/tcp --permanent
+firewall-cmd --zone=public --add-port=8082/tcp --permanent
+
+# 重启防火墙
+systemctl restart firewalld.service
+```
+
+​	上述操作完后 , 即可启动 tomcat_2 和 tomcat_3 并访问
+
+### 2 nginx 实现负载均衡
+
+​	1. 配置nginx
+
+```sh
+[root@localhost local]# mkdir -p /usr/local/nginx/conf/vhost
+[root@localhost local]# vim /usr/local/nginx/conf/nginx.conf
+```
+
+> /usr/local/nginx/conf/vhost  目录用于存放自定义配置的文件
+
+​	在 nginx.conf 的文件中, server 节点后添加如下内容
+
+```sh
+include vhost/*.conf
+```
+
+​	配置后的文件结构大致如下:
+
+```sh
+http
+{
+ server{}
+ include vhost/*.conf   # 增加的内容
+}
+```
+
+2. 在 vhost目录下新建文件 tomcat.loadbalance.conf
+
+   文件内容如下 , 配置了当访问 `www.mmall.com` 时 , 将请求分别转发到 `127.0.0.1:8081`  和 `127.0.0.1:8082`  
+
+```sh
+upstream www.mmall.com{
+        server 127.0.0.1:8081 weight=2;
+        server 127.0.0.1:8082 weight=1;
+}
+
+server {
+    listen 80;
+    autoindex on;
+    server_name www.mmall.com;
+    access_log /usr/local/nginx/logs/access.log combined;
+    index index.html index.htm index.jsp index.php;
+	
+	if ( $query_string ~* ".*[\;'\<\>].*" ){
+        return 404;
+    }
+    location / {
+            proxy_pass http://www.mmall.com;
+            add_header Access-Control-Allow-Origin *;
+     }
+}
+```
+
+​	内容添加并保存后 , 执行配置检查命令 `$NGINX_HOME/sbin/nginx -t` , 如果配置没有问题 ,即可执行 `$NGINX_HOME/sbin/nginx -s reload` 命令 , 重新加载配置文件
+
+3. 修改域名配置 /etc/hosts
+
+   添加如下内容 :
+
+```sh
+127.0.0.1  www.mmall.com	
+```
+
+​	执行完上述操作后 , 访问 `www.mmall.com` 时 , 即可访问服务器的tomcat , 并且请求会按照权重比例分发到不同的tomcat上
+
+## 18 redis 常用命令
+
+​	[redis常用命令参考](http://redisdoc.com/)
+
+### 1 启动命令,连接命令
+
+```sh
+# 指定启动端口(默认6379)
+redis-server --port 6380
+
+# 退出redis服务
+redis-cli shutdown
+
+# 连接指定主机指定端口服务
+redis-cli -h 127.0.0.1 -p 6380
+
+# 连接服务器并使用密码登录
+redis-cli -a password    # -a 后面的 password 时 redis.conf 中设置的密码
+```
+
+### 2 系统级命令
+
+```sh
+# 查看系统信息
+info [section]
+```
+
+```sh
+127.0.0.1:6379> info
+# Server
+redis_version:4.0.1
+redis_git_sha1:00000000
+redis_git_dirty:0
+redis_build_id:fce94a20126b533c
+redis_mode:standalone
+os:Linux 3.10.0-327.10.1.el7.x86_64 x86_64
+arch_bits:64
+multiplexing_api:epoll
+atomicvar_api:atomic-builtin
+gcc_version:4.8.5
+process_id:19490
+run_id:4f34c071b4c3e5d8f3924d46c265bb0820144c24
+tcp_port:6379
+uptime_in_seconds:8329
+uptime_in_days:0
+hz:10
+lru_clock:7993000
+executable:/usr/local/src/redis/bin/./redis-server
+config_file:/usr/local/src/redis/redis.conf
+
+# Clients
+connected_clients:2
+client_longest_output_list:0
+client_biggest_input_buf:0
+blocked_clients:0
+
+# Memory
+used_memory:849600
+used_memory_human:829.69K
+used_memory_rss:2420736
+used_memory_rss_human:2.31M
+used_memory_peak:849600
+used_memory_peak_human:829.69K
+used_memory_peak_perc:100.03%
+used_memory_overhead:832168
+used_memory_startup:765608
+used_memory_dataset:17432
+used_memory_dataset_perc:20.75%
+total_system_memory:496898048
+total_system_memory_human:473.88M
+used_memory_lua:37888
+used_memory_lua_human:37.00K
+maxmemory:0
+maxmemory_human:0B
+maxmemory_policy:noeviction
+mem_fragmentation_ratio:2.85
+mem_allocator:jemalloc-4.0.3
+active_defrag_running:0
+lazyfree_pending_objects:0
+
+# Persistence
+loading:0
+rdb_changes_since_last_save:0
+rdb_bgsave_in_progress:0
+rdb_last_save_time:1517942388
+rdb_last_bgsave_status:ok
+rdb_last_bgsave_time_sec:0
+rdb_current_bgsave_time_sec:-1
+rdb_last_cow_size:221184
+aof_enabled:0
+aof_rewrite_in_progress:0
+aof_rewrite_scheduled:0
+aof_last_rewrite_time_sec:-1
+aof_current_rewrite_time_sec:-1
+aof_last_bgrewrite_status:ok
+aof_last_write_status:ok
+aof_last_cow_size:0
+
+# Stats
+total_connections_received:2
+total_commands_processed:7
+instantaneous_ops_per_sec:0
+total_net_input_bytes:180
+total_net_output_bytes:23239
+instantaneous_input_kbps:0.00
+instantaneous_output_kbps:0.00
+rejected_connections:0
+sync_full:0
+sync_partial_ok:0
+sync_partial_err:0
+expired_keys:0
+evicted_keys:0
+keyspace_hits:0
+keyspace_misses:0
+pubsub_channels:0
+pubsub_patterns:0
+latest_fork_usec:2449
+migrate_cached_sockets:0
+slave_expires_tracked_keys:0
+active_defrag_hits:0
+active_defrag_misses:0
+active_defrag_key_hits:0
+active_defrag_key_misses:0
+
+# Replication
+role:master
+connected_slaves:0
+master_replid:1ebaed1d56c52b7f670378aa1df137c6b23994dd
+master_replid2:0000000000000000000000000000000000000000
+master_repl_offset:0
+second_repl_offset:-1
+repl_backlog_active:0
+repl_backlog_size:1048576
+repl_backlog_first_byte_offset:0
+repl_backlog_histlen:0
+
+# CPU
+used_cpu_sys:10.34
+used_cpu_user:4.09
+used_cpu_sys_children:0.01
+used_cpu_user_children:0.00
+
+# Cluster
+cluster_enabled:0
+
+# Keyspace
+db0:keys=1,expires=0,avg_ttl=0
+```
+
+```sh
+# 清除所有数据库中的键
+flushall
+# 清除当前数据库的键
+flushdb
+```
+
+### 3 键命令
+
+​	下面的命令 `key` 代表键名 , 在执行命令注意区分 !!!
+
+```sh
+keys *							# 列出所有的 key
+del key							# 删除指定 key
+exists key						# 判断key是否存在 , 返回 0 时不存在
+ttl key			# 查看key剩余到期时间 -1 永不过期 , -2 表示不存在(已过期)
+expire key						# 设置key的过期时间,单位 s
+type key						# 查看key对应数据的类型
+```
+
+```sh
+rename 		key1 key2			# 重命名key1为key2(key2已存在时会被覆盖)
+renamenx 	key1 key2			# 重命名key1为key2(key2已存在时不操作)
+
+# 默认以数字作为对象，值被解释为双精度浮点数
+SORT key 						# 返回键值从小到大排序的结果。
+SORT key DESC 					# 返回键值从大到小排序的结果。
+```
+
+#### 1 字符串类型(string)
+
+```sh
+# 
+set key value [EX seconds] [PX milliseconds] [NX|XX]
+
+setex key seconds value		# 设置key 并设置过期时间
+append key value			# 追加字符串到指定的key
+
+# redis整数的存储范围为 64 bit 的有符号数
+decr 	key					# 指定key的值减1 (key不存在时,先初始为0再做操作)
+decrby 	key		count		# 指定key的值减count
+
+incr	key					# 指定key的值加1
+incrby	key		count		# 指定key的值加count(可正可负)
+incrbyfloat key	count		# 指定key的值加count(浮点数)
+
+mset key1 v1 key2 v2 ..		# 同时给多个key设值
+mget key1 key2				# 同时获取多个key的值
+
+getrange key start end		# 截取指定key的字符串 , end = -1 时为获取到末尾
+setrange key offset value   # 从指定偏移量开始用value覆盖
+```
+
+#### 2 哈希表(hash)
+
+```sh
+hset key field value		# 设置指定哈希表key的field域的值为value
+hget key field				# 获取key的field域的值
+hgetall key					# 返回key中所有的域和值
+hdel key field1 field2 ..	# 删除key的field1 field2域的值
+hexists key field			# 存在返回1,否则返回0
+
+hvals 	key					# 获取哈希表key总所有的域的值
+hstrlen	key field			# 获取指定field的值的字符串长度
+
+hmset key field value [field2 value2]..
+hmget key field [field2] ..
+
+hlen 	key					# 返回哈希表key中域的数量
+hkeys 	key					# 返回哈希表key中所有的field
+
+hincrby 		key field increment
+hincrbyfloat	key field increment
+```
+
+```sh
+hsetnx key field value		# 当field不存在时设置值
+```
+
+#### 3 列表(list)
+
+```sh
+lset 	key index value
+lpush 	key value1 [value2 ..]
+lpushx 	key value1 [value2 ..]		# 当key存在且是列表时才操作
+lpop 	key 						# 返回列表的头元素
+lindex	key index					# 返回key列表下标为index的元素
+llen 	key							# 返回列表的长度
+linsert key before|after piovt value # 在值pivot之前(之后)插入value
+
+ltrim	key start stop				# 裁剪列表
+
+rpop 	key
+rpush 	key value1 ...
+rpushx 	key value1 ...
+
+rpoplpush source destination		# source列表尾部弹出并添加到 destination头部
+```
+
+#### 4 集合(set)
+
+```sh
+sadd key member [member ...]		# 往集合key中添加元素
+srem key member [member ...]		# 移除元素
+spop key							# 随机移除并返回集合中的一个元素
+scard key							# 返回集合的大小
+
+smembers	key
+sismember	key member
+
+
+smove	source destination member	# 将member 从source 移到 destination
+```
+
+```sh
+sinter  key [key ...]					# 返回集合的交集
+SINTERSTORE destination key [key ...]  	# 返回交集并存到destination
+
+sdiff	key [key ...]
+sdiffstore destination key [key ...]
+
+sunion 		key [key ...]				# 返回并集
+sunionstore destination key [key ...]	# 返回并集并存储
+```
+
+#### 5 有序集合(sortedset)
+
+```sh
+zadd 	key score member [score member ...]	# 添加元素到集合,score可以是浮点数
+zcard 	key									# 返回集合的大小
+zcount	key	minScore maxScore				# 返回分数闭区间中成员的个数
+zincrby	key increment member				# 给成员添加分数
+zscore	key member							# 返回member的分数
+
+# 返回分数区间的成员[含分数],自然排序
+zrange	key startScore stopScore [withscores] 
+ZRANGEBYSCORE key min max [WITHSCORES] [LIMIT offset count]
+
+zrank 	key member				# 返回member在集合中的排名(按分数由低到高排)
+srem	key memner [member ..] 	# 移除
+ZREMRANGEBYRANK key start stop	# 按排名移除
+ZREMRANGEBYSCORE key min max	# 按分数区间移除
+
+
+ZREVRANGE 			key start stop [WITHSCORES]
+ZREVRANGEBYSCORE 	key max min [WITHSCORES] [LIMIT offset count]
+ZREVRANK 			key member
+```
+
+```
+ZUNIONSTORE destination numkeys key [key ...] [WEIGHTS weight [weight ...]] [AGGREGATE SUM|MIN|MAX]
+```
+
+> 计算给定的一个或多个有序集的并集，其中给定 `key` 的数量必须以 `numkeys` 参数指定，并将该并集(结果集)储存到 `destination` 。
+>
+> 默认情况下，结果集中某个成员的 `score` 值是所有给定集下该成员 `score` 值之 *和* 。
+>
+> **WEIGHTS**
+>
+> 使用 `WEIGHTS` 选项，你可以为 *每个* 给定有序集 *分别* 指定一个乘法因子(multiplication factor)，每个给定有序集的所有成员的 `score` 值在传递给聚合函数(aggregation function)之前都要先乘以该有序集的因子。
+>
+> 如果没有指定 `WEIGHTS` 选项，乘法因子默认设置为 `1` 。
+>
+> **AGGREGATE**
+>
+> 使用 `AGGREGATE` 选项，你可以指定并集的结果集的聚合方式。
+>
+> 默认使用的参数 `SUM` ，可以将所有集合中某个成员的 `score` 值之 *和* 作为结果集中该成员的 `score` 值；使用参数 `MIN` ，可以将所有集合中某个成员的 *最小* `score` 值作为结果集中该成员的 `score` 值；而参数 `MAX` 则是将所有集合中某个成员的 *最大* `score` 值作为结果集中该成员的 `score` 值。
+
+```sh
+# 计算交集
+ZINTERSTORE destination numkeys key [key ...] [WEIGHTS weight [weight ...]] [AGGREGATE SUM|MIN|MAX]
+```
+
+#### 6 发布/订阅(pub/sub)
+
+```sh
+SUBSCRIBE channel [channel ...]		# 订阅指定频道
+PSUBSCRIBE pattern [pattern ...]  	# psubscribe news.* tweet.*  模糊匹配
+
+UNSUBSCRIBE [channel [channel ...]]
+PUNSUBSCRIBE [pattern [pattern ...]]
+
+PUBSUB CHANNELS [pattern]	# 列出当前的活跃频道(有订阅者)
+
+publish channel message     # 往频道发布消息
+```
+
+#### 7 事务(transaction)
+
+```sh
+WATCH key [key ...]  # 监视一个(或多个) key ，如果在事务执行之前这个(或这些) key 被其他命令所改动，那么事务将被打
+multi	# 标记一个事务块的开始
+unwatch	# 取消 WATCH 命令对所有 key 的监视
+exec	# 执行所有事务块内的命令
+discard # 取消事务,放弃执行事务块内的所有命令
+```
+
+#### 8 连接
+
+```sh
+auth password 	# 输入密码
+```
+
+#### 9 服务器(server)
+
+```sh
+bgRewriteAOF	# 执行一个aof文件的重写操作
+bgsave			# 后台异步保存当前数据库数据到磁盘(fork 子进程来执行)
+save			# 同步保存数据快照,会阻塞所有客户端
+
+client list				# 返回所有连接到服务器的客户端信息
+client kill ip:port		# 关闭地址为 ip:port 的客户端
+
+CONFIG GET parameter    	# 取得 Redis 服务器的配置参数, * 时返回所有
+CONFIG SET parameter value	# 动态的设置参数
+# 对启动 Redis 服务器时所指定的 redis.conf 文件进行改写(原子性重写)
+CONFIG REWRITE			
+
+info				# 查看服务器的统计数据
+config resetstat	# 重置info命令中的某些统计数据
+
+flushall	# 清所有数据
+flushdb		# 清当前数据库数据
+
+monitor		# 实时打印redis服务器接收到的命令,调试用
+
+shutdown [save|nosave]	
+time	# 返回当前服务器的时间,第一个字符串是当前时间，而第二个字符串是当前这一秒钟已经逝去的微秒数。
+```
+
+```sh
+slaveof host port # 将当前服务器设置为 host:port 的从属服务器
+sync  # 复制功能的内部命令
+```
+
