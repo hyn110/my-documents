@@ -1,4 +1,4 @@
-# 20_spring data-redis
+#  20_spring data-redis
 
 [spring data-redis 指南](https://docs.spring.io/spring-data/redis/docs/2.0.2.RELEASE/reference/html/)
 
@@ -17,7 +17,7 @@
     <dependency>
         <groupId>org.springframework.data</groupId>
         <artifactId>spring-data-redis</artifactId>
-        <version>2.0.2.RELEASE</version>
+        <version>1.8.8.RELEASE</version>
     </dependency>
 </dependencies>
 ```
@@ -608,3 +608,8 @@ public static void main(String[] args) {
         System.out.println(zset.rangeByScore("lpZset", 0, 2));
     }
 ```
+
+
+
+
+

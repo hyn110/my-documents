@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+    http://www.springframework.org/schema/beans/spring-beans.xsd"
+       default-lazy-init="true">
+
+    <description>shiro安全配置</description>
+
+    <!--缓存声明-->
+    <!--1.安全管理器-->
+    <!--2.自定义Realm-->
+    <!--3.remeberMe管理器-->
+    <!--4.会话管理 sessionManager-->
+    <!--5.credentialsMatcher比较器-->
+    <!--6.shiro Filter 配置-->
+
+    <bean id="securityManager" class="org.apache.shiro.web.mgt.DefaultWebSecurityManager">
+        <property name="realm" ref="shiroDbRealm"/>
+        <property name="cacheManager" ref="shiroSpringCacheManager"/>
+        <property name="rememberMeManager" ref="rememberMeManager"/>
+        <property name="sessionManager" ref="sessionManager"/>
+    </bean>
+
+    <bean id="shiroDbRealm" class="com.fmi110.commons.shiro.ShiroDbRealm">
+        <constructor-arg index="0" name="cacheManger" ref="shiroSpringCacheManager"/>
+        <constructor-arg index="1" name="matcher" ref="credentialsMatcher"/>
+        <!--允许缓存认证信息-->
+        <!--设置认证信息缓存的名称-->
+        <!--设置权限信息缓存的名称-->
+        <property name="authenticationCachingEnabled" value="true"/>
+        <property name="authenticationCacheName" value="authenticationCache"/>
+        <property name="authorizationCacheName" value="authorizationCache"/>
+    </bean>
+    <!--用户授权信息缓存-->
+    <bean id="shiroSpringCacheManager" class="com.fmi110.commons.shiro.cache.ShiroSpringCacheManager">
+        <property name="cacheManager" ref="cacheManger"/>
+    </bean>
+
+    <bean id="rememberMeManager" class="org.apache.shiro.web.mgt.CookieRememberMeManager">
+        <!--rememberMe管理器，cipherKey是加密rememberMe Cookie的密钥；默认AES算法-->
+        <property name="cipherKey" value="#{T(org.apache.shiro.codec.Base64).decode('5aaC5qKm5oqA5pyvAAAAAA==')}"/>
+        <property name="cookie" ref="rememberMeCookie"/>
+    </bean>
+
+    <bean id="rememberMeCookie" class="org.apache.shiro.web.servlet.SimpleCookie">
+        <constructor-arg value="rememberMe"/>
+        <property name="httpOnly" value="true"/>
+        <!-- 7分钟,采用spring el计算方便修改！ -->
+        <property name="maxAge" value="#{7*60}"/>
+    </bean>
+
+    <!--用于Web环境的实现，可以替代ServletContainerSessionManager，自己维护着会话，直接废弃了Servlet容器的会话管理-->
+    <!--http://jinnianshilongnian.iteye.com/blog/2028675-->
+    <bean id="sessionManager" class="org.apache.shiro.web.session.mgt.DefaultWebSessionManager">
+        <!--全局会话超时时间 3 分钟-->
+        <property name="globalSessionTimeout" value="#{3*60*1000}"/>
+        <property name="sessionIdUrlRewritingEnabled" value="false"/>
+        <property name="sessionDAO" ref="sessionDao"/>
+    </bean>
+
+    <!-- 会话DAO 用于会话的CRUD -->
+    <bean id="sessionDao" class="org.apache.shiro.session.mgt.eis.EnterpriseCacheSessionDAO">
+        <!-- Session缓存名字，默认就是shiro-activeSessionCache -->
+        <property name="activeSessionsCacheName" value="activeSessionCache"/>
+        <property name="cacheManager" ref="shiroSpringCacheManager"/>
+    </bean>
+
+    <!--密码比较器,密码输错5次,将被锁定半小时-->
+    <bean id="credentialsMatcher" class="com.fmi110.commons.shiro.RetryLimitCredentialsMatcher">
+        <constructor-arg ref="shiroSpringCacheManager"/>
+        <!--通过缓存超时时间,实现账户锁定时间控制-->
+        <property name="retryLimitCacheName" value="oneMinute"/>
+        <!--指定散列算法-->
+        <property name="hashAlgorithmName" value="md5"/>
+        <!--散列迭代次数-->
+        <property name="hashIterations" value="1"/>
+    </bean>
+
+    <!-- 调用静态方法注入 -->
+    <!-- 这里调用 SecurityUtils.setSecurityManager() 方法往 SecurityUtils 注入 securityManager-->
+    <bean class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+        <property name="staticMethod" value="org.apache.shiro.SecurityUtils.setSecurityManager"/>
+        <property name="arguments" ref="securityManager"/>
+    </bean>
+
+    <!-- Shiro Filter -->
+    <bean id="shiroFilter" class="org.apache.shiro.spring.web.ShiroFilterFactoryBean">
+        <!-- 安全管理器 -->
+        <property name="securityManager" ref="securityManager"/>
+        <!-- 默认的登陆访问url -->
+        <property name="loginUrl" value="/login"/>
+        <!-- 登陆成功后跳转的url -->
+        <property name="successUrl" value="/index"/>
+        <!-- 没有权限跳转的url -->
+        <property name="unauthorizedUrl" value="/unauth"/>
+        <property name="filterChainDefinitions">
+            <value>
+                <!--
+                    anon  不需要认证
+                    authc 需要认证
+                    user  验证通过或RememberMe登录的都可以
+                -->
+                /captcha.jpg = anon
+                /commons/** = anon
+                /static/** = anon
+                /webhooks = anon
+                /login = anon
+                /** = user
+            </value>
+        </property>
+        <!--<property name="filters">-->
+            <!--<map>-->
+                <!--<entry key="user" value-ref="ajaxSessionFilter" />-->
+            <!--</map>-->
+        <!--</property>-->
+    </bean>
+
+    <bean id="passwordHash" class="com.fmi110.commons.shiro.PasswordHash">
+        <property name="hashIterations" value="1"/>
+        <property name="algorithmName" value="md5"/>
+    </bean>
+</beans>

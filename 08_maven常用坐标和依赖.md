@@ -237,6 +237,14 @@
 </dependency>
 ```
 
+#### 6 spring-session
+
+```
+
+```
+
+
+
 ### hibernate
 
 ​	经典的 orm 框架,不解释
@@ -425,6 +433,12 @@
     <artifactId>jedis</artifactId>
     <version>2.9.0</version>
 </dependency>
+
+<dependency>
+    <groupId>org.springframework.data</groupId>
+    <artifactId>spring-data-redis</artifactId>
+    <version>1.8.8.RELEASE</version>
+</dependency>
 ```
 
 ### mysql-connector-java
@@ -437,9 +451,49 @@
  </dependency>
 ```
 
+### mybatis
 
+```xml
+<!-- https://mvnrepository.com/artifact/org.mybatis/mybatis -->
+<dependency>
+    <groupId>org.mybatis</groupId>
+    <artifactId>mybatis</artifactId>
+    <version>3.4.5</version>
+</dependency>
+<!--mybatis 和 spring 整合-->
+<dependency>
+    <groupId>org.mybatis</groupId>
+    <artifactId>mybatis-spring</artifactId>
+    <version>1.3.1</version>
+</dependency>
+```
 
+### mybatis-plus
 
+```xml
+<!-- http://baomidou.oschina.io/mybatis-plus-doc/#/quick-start -->
+<dependency>
+	<groupId>com.baomidou</groupId>
+	<artifactId>mybatis-plus</artifactId>
+	<version>2.1.8</version>
+</dependency>
+```
+
+### mybatis 分页插件
+
+```xml
+<!--mybatis 分页插件-->
+<dependency>
+    <groupId>com.github.pagehelper</groupId>
+    <artifactId>pagehelper</artifactId>
+    <version>5.1.2</version>
+</dependency>
+<dependency>
+    <groupId>com.github.miemiedev</groupId>
+    <artifactId>mybatis-paginator</artifactId>
+    <version>1.2.17</version>
+</dependency>
+```
 
 
 

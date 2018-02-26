@@ -2695,3 +2695,5 @@ slaveof host port # 将当前服务器设置为 host:port 的从属服务器
 sync  # 复制功能的内部命令
 ```
 
+## 19 单点登录 sso
+
