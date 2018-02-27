@@ -13,7 +13,11 @@
     http://www.springframework.org/schema/aop
     http://www.springframework.org/schema/aop/spring-aop.xsd">
 
-    <context:component-scan base-package="com.fmi110.controller"/>
+   <!-- 关闭默认扫描策略,只扫描controller -->
+    <context:component-scan base-package="com.fmi110" annotation-config="true" use-default-filters="false">
+        <context:include-filter type="annotation" expression="org.springframework.stereotype.Controller"/>
+    </context:component-scan>
+    
     <mvc:annotation-driven/>
     <!--开启静态资源处理-->
     <mvc:default-servlet-handler/>

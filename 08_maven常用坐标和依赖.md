@@ -495,6 +495,47 @@
 </dependency>
 ```
 
+### zxing 二维码工具
+
+```xml
+     <!-- https://mvnrepository.com/artifact/com.google.zxing/core -->
+        <!-- 二维码 -->
+        <dependency>
+            <groupId>com.google.zxing</groupId>
+            <artifactId>core</artifactId>
+            <version>3.3.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.google.zxing</groupId>
+            <artifactId>javase</artifactId>
+            <version>3.3.0</version>
+            <!--<version>${zxing.version}</version>-->
+            <!--<scope>provided</scope>-->
+        </dependency>
+```
+
+### redission
+
+​	https://github.com/redisson/redisson/wiki/1.-%E6%A6%82%E8%BF%B0
+
+​	Redisson是一个在Redis的基础上实现的Java驻内存数据网格（In-Memory Data Grid）。它不仅提供了一系列的分布式的Java常用对象，还提供了许多分布式服务。其中包括(`BitSet`, `Set`, `Multimap`, `SortedSet`, `Map`, `List`, `Queue`, `BlockingQueue`, `Deque`, `BlockingDeque`, `Semaphore`, `Lock`, `AtomicLong`, `CountDownLatch`, `Publish / Subscribe`, `Bloom filter`, `Remote service`, `Spring cache`, `Executor service`, `Live Object service`, `Scheduler service`) Redisson提供了使用Redis的最简单和最便捷的方法。Redisson的宗旨是促进使用者对Redis的关注分离（Separation of Concern），从而让使用者能够将精力更集中地放在处理业务逻辑上。
+
+```xml
+<!-- JDK 1.8+ compatible -->
+<dependency>
+   <groupId>org.redisson</groupId>
+   <artifactId>redisson</artifactId>
+   <version>3.6.1</version>
+</dependency>  
+
+<!-- JDK 1.6+ compatible -->
+<dependency>
+   <groupId>org.redisson</groupId>
+   <artifactId>redisson</artifactId>
+   <version>2.11.1</version>
+</dependency>
+```
+
 
 
 ## 2 maven 插件
@@ -1042,8 +1083,10 @@ target/
                         http://www.springframework.org/schema/mvc/spring-mvc-4.0.xsd
                         http://www.springframework.org/schema/context
                         http://www.springframework.org/schema/context/spring-context-4.0.xsd">
-    <!-- 设置使用注解的类所在的jar包 -->
-    <context:component-scan base-package="com.fmi110.mmall.controller"/>
+    <!-- 关闭默认扫描策略,只扫描controller -->
+    <context:component-scan base-package="com.fmi110" annotation-config="true" use-default-filters="false">
+        <context:include-filter type="annotation" expression="org.springframework.stereotype.Controller"/>
+    </context:component-scan>
     <mvc:annotation-driven/>
     <!--静态资源交给 defaultServlet 处理,否则访问静态资源会 404-->
     <mvc:default-servlet-handler/>
@@ -1074,8 +1117,12 @@ target/
     <!-- 声明使用占位符 , 并指定占位符文件位置 -->
     <context:property-placeholder location="classpath:jdbc.properties"/>
     <!-- 开启注解扫描 -->
+    <!--
     <context:component-scan base-package="com.fmi110.mmall.service,com.fmi110.mmall.dao"/>
-
+ 	-->
+    <context:component-scan base-package="com.fmi110.mmall">
+        <!--排除 controller 扫描 , controller 有 DispatcherServlet 扫描-->
+        <context:exclude-filter type="annotation" expression="org.springframework.stereotype.Controller"/>
     <!-- 1 使用druid数据库连接池注册数据源 -->
     <bean id="dataSource" class="com.alibaba.druid.pool.DruidDataSource">
         <!-- 基础配置 -->
@@ -1241,3 +1288,64 @@ target/
 
 
 ## 4 java对象配置类
+
+### 1 springmvc 全局异常处理器
+
+```java
+package com.fmi110.commons;
+
+import com.fmi110.utils.WebUtils;
+import org.springframework.stereotype.Component;
+import org.springframework.web.bind.annotation.ControllerAdvice;
+import org.springframework.web.method.HandlerMethod;
+import org.springframework.web.servlet.HandlerExceptionResolver;
+import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.servlet.view.json.MappingJackson2JsonView;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.util.HashMap;
+import java.util.Map;
+
+/**
+ * @author fmi110
+ * @Description: 全局异常统一处理类
+ * @Date 2018/2/27 11:08
+ */
+@Component
+public class ExceptionResolver implements HandlerExceptionResolver{
+
+    @Override
+    public ModelAndView resolveException(HttpServletRequest request, HttpServletResponse response, Object handler,
+                                         Exception ex) {
+
+        /**
+         * 在这里可以定制自己的异常处理策略
+         */
+//        if (ex instanceof MyException) {
+//            return new ModelAndView("error-my",map);
+//        } else {
+//            return new ModelAndView("error",map);
+//        }
+
+        Map<String, Object> map = new HashMap<String, Object>();
+        map.put("code",500);
+        map.put("message","系统内部异常...");
+        map.put("data", "这里填充需要返回的数据的对象");
+
+        // 判断是否时ajax 请求
+        boolean isAjax = WebUtils.isAjax((HandlerMethod) handler);
+        if (isAjax) {
+            // 视图内容将会转为 json 返回
+            ModelAndView mv = new ModelAndView(new MappingJackson2JsonView());
+            mv.addObject(map);
+            return mv;
+        }else{
+            // 普通请求返回页面资源
+            return new ModelAndView("error.jsp",map);
+        }
+    }
+}
+
+```
+

@@ -1212,8 +1212,10 @@ CREATE TABLE `mmall_user` (
                         http://www.springframework.org/schema/mvc/spring-mvc-4.0.xsd
                         http://www.springframework.org/schema/context
                         http://www.springframework.org/schema/context/spring-context-4.0.xsd">
-    <!-- 设置使用注解的类所在的jar包 -->
-    <context:component-scan base-package="com.fmi110.mmall.controller"/>
+    <!-- 关闭默认扫描策略,只扫描controller -->
+    <context:component-scan base-package="com.fmi110" annotation-config="true" use-default-filters="false">
+        <context:include-filter type="annotation" expression="org.springframework.stereotype.Controller"/>
+    </context:component-scan>
     <mvc:annotation-driven/>
     <!--静态资源交给 defaultServlet 处理,否则访问静态资源会 404-->
     <mvc:default-servlet-handler/>
@@ -1244,7 +1246,12 @@ CREATE TABLE `mmall_user` (
     <!-- 声明使用占位符 , 并指定占位符文件位置 -->
     <context:property-placeholder location="classpath:jdbc.properties"/>
     <!-- 开启注解扫描 -->
+     <!-- 
     <context:component-scan base-package="com.fmi110.mmall.service,com.fmi110.mmall.dao"/>
+     -->
+    <context:component-scan base-package="com.fmi110.mmall">
+        <!--排除 controller 扫描 , controller 有 DispatcherServlet 扫描-->
+        <context:exclude-filter type="annotation" expression="org.springframework.stereotype.Controller"/>
 
     <!-- 1 使用druid数据库连接池注册数据源 -->
     <bean id="dataSource" class="com.alibaba.druid.pool.DruidDataSource">
@@ -2695,5 +2702,122 @@ slaveof host port # 将当前服务器设置为 host:port 的从属服务器
 sync  # 复制功能的内部命令
 ```
 
-## 19 单点登录 sso
+## 19 spring-session
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:aop="http://www.springframework.org/schema/aop"
+       xmlns:tx="http://www.springframework.org/schema/tx" xmlns:jdbc="http://www.springframework.org/schema/jdbc"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xsi:schemaLocation="
+     http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
+     http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+     http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx.xsd
+     http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop.xsd">
+
+
+    <bean id="redisHttpSessionConfiguration" class="org.springframework.session.data.redis.config.annotation.web.http.RedisHttpSessionConfiguration">
+        <property name="maxInactiveIntervalInSeconds" value="1800" />
+    </bean>
+
+    <bean id="defaultCookieSerializer" class="org.springframework.session.web.http.DefaultCookieSerializer">
+        <property name="domainName" value=".happymmall.com" />
+        <property name="useHttpOnlyCookie" value="true" />
+        <property name="cookiePath" value="/" />
+        <property name="cookieMaxAge" value="31536000" />
+    </bean>
+
+    <bean id="jedisPoolConfig" class="redis.clients.jedis.JedisPoolConfig">
+        <property name="maxTotal" value="20"/>
+    </bean>
+
+    <bean id="jedisConnectionFactory" class="org.springframework.data.redis.connection.jedis.JedisConnectionFactory">
+        <property name="hostName" value="127.0.0.1" />
+        <property name="port" value="6379" />
+        <property name="poolConfig" ref="jedisPoolConfig" />
+    </bean>
+</beans>
+```
+
+## 20 统一异常处理 
+
+### 1 注解扫描包实现隔离配置
+
+​	applicationContext.xml 中的注解扫描配置修改为 :
+
+```xml
+<context:component-scan base-package="com.fmi110.mmall">
+        <!--排除 controller 扫描 , controller 有 DispatcherServlet 扫描-->
+        <context:exclude-filter type="annotation" expression="org.springframework.stereotype.Controller"/>
+    </context:component-scan>
+```
+
+​	spring-mvc.xml 修改为 :
+
+```xml
+<!-- 关闭默认扫描策略,只扫描controller -->
+    <context:component-scan base-package="com.fmi110" annotation-config="true" use-default-filters="false">
+        <context:include-filter type="annotation" expression="org.springframework.stereotype.Controller"/>
+    </context:component-scan>
+```
+
+### 2 添加全局异常处理器
+
+```java
+package com.fmi110.commons;
+
+import com.fmi110.utils.WebUtils;
+import org.springframework.stereotype.Component;
+import org.springframework.web.bind.annotation.ControllerAdvice;
+import org.springframework.web.method.HandlerMethod;
+import org.springframework.web.servlet.HandlerExceptionResolver;
+import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.servlet.view.json.MappingJackson2JsonView;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.util.HashMap;
+import java.util.Map;
+
+/**
+ * @author fmi110
+ * @Description: 全局异常统一处理类
+ * @Date 2018/2/27 11:08
+ */
+@Component
+public class ExceptionResolver implements HandlerExceptionResolver{
+
+    @Override
+    public ModelAndView resolveException(HttpServletRequest request, HttpServletResponse response, Object handler,
+                                         Exception ex) {
+
+        /**
+         * 在这里可以定制自己的异常处理策略
+         */
+//        if (ex instanceof MyException) {
+//            return new ModelAndView("error-my",map);
+//        } else {
+//            return new ModelAndView("error",map);
+//        }
+
+        Map<String, Object> map = new HashMap<String, Object>();
+        map.put("code",500);
+        map.put("message","系统内部异常...");
+        map.put("data", "这里填充需要返回的数据的对象");
+
+        // 判断是否时ajax 请求
+        boolean isAjax = WebUtils.isAjax((HandlerMethod) handler);
+        if (isAjax) {
+            // 视图内容将会转为 json 返回
+            ModelAndView mv = new ModelAndView(new MappingJackson2JsonView());
+            mv.addObject(map);
+            return mv;
+        }else{
+            // 普通请求返回页面资源
+            return new ModelAndView("error.jsp",map);
+        }
+    }
+}
+```
 
