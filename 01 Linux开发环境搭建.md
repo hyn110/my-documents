@@ -52,6 +52,13 @@ alias zookeeper-status='/usr/local/src/zookeeper-3.4.10/bin/zkServer.sh status'
 
 ​	软件包版本 `jdk-8u144-linux-i586.tar.gz` , 并将文件上传值 linux 的 `/usr/local/src` 目录下
 
+```sh
+下载 jdk
+http://download.oracle.com/otn-pub/java/jdk/8u162-b12/0da788060d494f5095bf8624735fa2f1/jdk-8u162-linux-x64.tar.gz?AuthParam=1520407510_460b81453cb73e5236891ba1e0a7aef5
+```
+
+
+
 ##### 1 查看系统自带的jdk
 
 ```Sh
@@ -125,6 +132,11 @@ Java HotSpot(TM) Client VM (build 25.144-b01, mixed mode)
 ## 2 安装Tomcat
 
 ​	软件包版本 `apache-tomcat-8.0.46.tar.gz` , 并将文件上传至 linux 的 `/usr/local/src` 目录下
+
+```sh
+下载tomcat
+http://mirror.bit.edu.cn/apache/tomcat/tomcat-7/v7.0.85/bin/apache-tomcat-7.0.85.tar.gz
+```
 
 ##### 1 进入安装包目录并解压压缩包
 
@@ -290,6 +302,11 @@ Using CLASSPATH:       /usr/local/src/tomcat/bin/bootstrap.jar:/usr/local/src/to
 ## 3 安装MySQL
 
 ​	软件包版本 `mysql-5.7.19-1.el6.i686.rpm-bundle.tar`  , 并将文件上传值 linux 的 `/usr/local/src` 目录下
+
+```sh
+下载mysql
+https://cdn.mysql.com//Downloads/MySQL-5.7/mysql-5.7.21-linux-glibc2.12-x86_64.tar.gz
+```
 
 ##### 1 检查已安装版本并卸载
 
@@ -557,6 +574,10 @@ mysqld          0:关闭  1:关闭  2:启用  3:启用  4:启用  5:启用  6:�
 
 ​	软件包版本  `redis-4.0.1.tar.gz`  , 并将文件上传值 linux 的 `/usr/local/src` 目录下
 
+```
+http://download.redis.io/releases/redis-4.0.8.tar.gz
+```
+
 ##### 1 安装gcc编译器
 
 ```sh
@@ -720,6 +741,10 @@ PONG
 
 ​	版本         `zookeeper-3.4.10.tar.gz` , 文件上传至 `/usr/local/src` 目录下
 
+```
+http://mirrors.hust.edu.cn/apache/zookeeper/stable/zookeeper-3.4.10.tar.gz
+```
+
 ##### 1 进入目录解压文件
 
 ```Sh
@@ -807,9 +832,42 @@ Stopping zookeeper ... STOPPED
 /usr/local/src/zookeeper-3.4.10/bin/zkServer.sh start
 ```
 
+zookeeper 客户端命令：
+
+```sh
+[zk: localhost:2181(CONNECTED) 28] help
+ZooKeeper -server host:port cmd args
+	stat path [watch]
+	set path data [version]
+	ls path [watch]
+	delquota [-n|-b] path
+	ls2 path [watch]
+	setAcl path acl
+	setquota -n|-b val path
+	history 
+	redo cmdno
+	printwatches on|off
+	delete path [version]
+	sync path
+	listquota path
+	rmr path
+	get path [watch]
+	create [-s] [-e] path data acl
+	addauth scheme auth
+	quit 
+	getAcl path
+	close 
+	connect host:port
+
+```
+
 ## 6 安装nginx
 
 [centos7 安装nginx的两种方式](http://www.jb51.net/article/107966.htm)
+
+```
+http://nginx.org/download/nginx-1.13.9.tar.gz
+```
 
 #### 1 yum 在线安装
 
@@ -1848,13 +1906,110 @@ server {
 
 ​	执行完上述操作后 , 访问 `www.mmall.com` 时 , 即可访问服务器的tomcat , 并且请求会按照权重比例分发到不同的tomcat上
 
+## 10 kafka 安装
+
+### 1 安装
+
+```
+# 切换到 /usr/local/src 目录下 并下载文件
+cd /usr/local/src && wget http://mirrors.hust.edu.cn/apache/kafka/1.0.1/kafka_2.11-1.0.1.tgz
+```
+
+```sh
+#1. 解压安装包
+tar -xzf kafka_2.11-1.0.1.tgz 
+#2.配置环境变量
+vim /etc/profile
+----------- 环境变量内容 -------------------
+	export KAFKA_HOME=/usr/local/kafka
+	export PATH=$KAFKA_HOME/bin:$PATH
+-------------------------------------------
+#3.启动kafka(需要先启动zookeeper!!!)
+./bin/kafka-server-start.sh config/server.properties
+```
+
+### 2 集群配置
+
+​	修改配置文件 `${KAFKA_HOME}/config/server.properties`
+
+```sh
+主机1:
+    broker.id=1
+    listeners=PLAINTEXT://:9093（单机上运行多个时需要修改！！否则不动即可）
+    log.dir=/home/centos/kafka/kafka-logs
+	zookeeper.connect=192.168.80.132:2181,192.168.80.133:2181,192.168.80.134:2181
+
+主机2:
+    broker.id=2
+    log.dir=/home/centos/kafka/kafka-logs
+    zookeeper.connect=192.168.80.132:2181,192.168.80.133:2181,192.168.80.134:2181
+
+主机3:
+    broker.id=2
+    log.dir=/home/centos/kafka/kafka-logs
+    zookeeper.connect=192.168.80.132:2181,192.168.80.133:2181,192.168.80.134:2181
+```
+
+​	启动，必须先启动 zookeeper !!!
+
+```sh
+cd /usr/local/kafka/ && ./bin/kafka-server-start.sh config/server.properties &
+```
+
+​	查看端口,确认启动情况
+
+```
+netstat -ano | grep 9092
+```
+
+### 3 常用操作
+
+1. 创建一个topic，带两个备份
 
 
-如果觉得笔记不错,扫码鼓励下吧,两毛也是爱,O(∩_∩)O~~~~*
+```sh
+bin/kafka-topics.sh --create --zookeeper localhost:2181 --replication-factor 2 --partitions 1 --topic my-replicated-topic
+```
 
-![2毛也是爱~~~](pay.jpg )
+2. 查看broker的执行情况
+
+```sh
+> bin/kafka-topics.sh --describe --zookeeper localhost:2181 --topic my-replicated-topic
+Topic:my-replicated-topic   PartitionCount:1    ReplicationFactor:3 Configs:
+    Topic: my-replicated-topic  Partition: 0    Leader: 1   Replicas: 1,2,0 Isr: 1,2,0
+```
+
+3. 生产消息
+
+```
+> bin/kafka-console-producer.sh --broker-list localhost:9092 --topic my-replicated-topic
+...
+my test message 1
+my test message 2
+^C
+```
+
+4. 消费消息
+
+```
+> bin/kafka-console-consumer.sh --bootstrap-server localhost:9092 --from-beginning --topic my-replicated-topic
+...
+my test message 1
+my test message 2
+^C
+```
+
+### 4 kafka 在zookeeper上的配置
+
+```sh
+[zk: localhost:2181(CONNECTED) 4] ls /
+[controller_epoch, controller, brokers, isr_change_notification, consumers, log_dir_event_notification, latest_producer_id_block, config]
+```
+
+```
+[zk: localhost:2181(CONNECTED) 7] get /controller      
+{"version":1,"brokerid":3,"timestamp":"1520585755072"}
 
 
-
-
+```
 
