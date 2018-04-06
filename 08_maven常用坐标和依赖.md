@@ -586,7 +586,7 @@
             <version>2.6</version>
             <configuration>
                 <!-- 配置后项目中没有web.xml文件时,项目不提示错误 -->
-                <failOnMissingWebXml>false</failOnMissingWebXml
+                <failOnMissingWebXml>false</failOnMissingWebXml>
             </configuration>
         </plugin>
 ```

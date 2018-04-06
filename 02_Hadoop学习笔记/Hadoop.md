@@ -117,6 +117,10 @@ hadoop version  # 查看 hadoop 版本信息
 
 > `${HADOOP_HOME}`  为配置好的环境变量 , 指向了 hadoop 的安装目录 , 所以要编辑文件可以直接输入如下命令 `vim ${HADOOP_HOME}/etc/hadoop/core-site.xml`
 
+```sh
+vim ${HADOOP_HOME}/etc/hadoop/core-site.xml
+```
+
 ```Xml
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
@@ -204,6 +208,10 @@ hadoop namenode -format
 
    配置文件路径 `${HADOOP_HOME}/etc/hadoop/hadoop-env.sh`  ,  配置项位于配置文件的第 25 行左右 , 修改为如下内容
 
+   ```sh
+   vim ${HADOOP_HOME}/etc/hadoop/hadoop-env.sh
+   ```
+
 ```Sh
 export JAVA_HOME=/soft/jdk
 ```
@@ -214,7 +222,7 @@ export JAVA_HOME=/soft/jdk
 3. 启动 hadoop 所有进程
 
 ```Sh
-startup-all.sh
+${HADOOP_HOME}/sbin/start-all.sh
 ```
 
 4. 查看进程运行状态
@@ -498,7 +506,11 @@ ssh-copy-id -i ~/.ssh/id_rsa.pub m15
 
 ##### 6 修改配置文件 `core-site.xml`
 
- `sudo vim  ${HADOOP_HOME}/etc/hadoop/core-site.xml` , 修改内容为:
+```sh
+sudo vim  ${HADOOP_HOME}/etc/hadoop/core-site.xml
+```
+
+ 修改内容为:
 
 ```Xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -519,7 +531,11 @@ ssh-copy-id -i ~/.ssh/id_rsa.pub m15
 
 ##### 7 修改配置文件 `hdfs-site.xml`
 
-`sudo vim  ${HADOOP_HOME}/etc/hadoop/hdfs-site.xml` , 修改内容为:
+```sh
+sudo vim  ${HADOOP_HOME}/etc/hadoop/hdfs-site.xml
+```
+
+ 修改内容为:
 
 ```Xml
 <?xml version="1.0"?>
@@ -550,7 +566,11 @@ ssh-copy-id -i ~/.ssh/id_rsa.pub m15
 
 #####  8 修改配置文件 `yarn-site.xml`
 
- `sudo vim  ${HADOOP_HOME}/etc/hadoop/yarn-site.xml` , 修改内容为:
+```sh
+ sudo vim  ${HADOOP_HOME}/etc/hadoop/yarn-site.xml
+```
+
+  修改内容为:
 
 ```Xml
 <?xml version="1.0"?>
@@ -570,7 +590,11 @@ ssh-copy-id -i ~/.ssh/id_rsa.pub m15
 
 ##### 9 修改配置文件 `mapred-site.xml`
 
- `sudo vim  ${HADOOP_HOME}/etc/hadoop/mapred-site.xml` , 修改内容为:
+```sh
+sudo vim  ${HADOOP_HOME}/etc/hadoop/mapred-site.xml
+```
+
+修改内容为:
 
 ```Xml
 <?xml version="1.0"?>
@@ -585,7 +609,11 @@ ssh-copy-id -i ~/.ssh/id_rsa.pub m15
 
 ##### 10 修改配置文件 slaves
 
-`sudo vim  ${HADOOP_HOME}/etc/hadoop/slaves` , 修改内容为:
+```sh
+sudo vim  ${HADOOP_HOME}/etc/hadoop/slaves
+```
+
+修改内容为:
 
 ```Sh
 m13
@@ -597,7 +625,11 @@ m15
 
 ##### 11 修改 hadoop 配置文件 , 指定 `JAVA_HOME` 路径
 
-​	 `sudo vim ${HADOOP_HOME}/etc/hadoop/hadoop-env.sh`  ,  配置项位于配置文件的第 25 行左右 , 修改为如下内容
+```sh
+sudo vim ${HADOOP_HOME}/etc/hadoop/hadoop-env.sh
+```
+
+配置项位于配置文件的第 25 行左右 , 修改为如下内容
 
 ```properties
 export JAVA_HOME=/soft/jdk
@@ -618,15 +650,13 @@ scp -r hadoop fmi110@m15:/soft/hadoop/etc/
 ##### 13 删除临时目录文件和 hadoop 日志
 
 ```sh
-cd /tmp
-rm -rf hadoop-fmi110
+cd /tmp && rm -rf hadoop-fmi110
 ssh s202 rm -rf /tmp/hadoop-fmi110
 ssh s203 rm -rf /tmp/hadoop-fmi110
 ssh s204 rm -rf /tmp/hadoop-fmi110
 
 
-cd /soft/hadoop/logs
-rm -rf *
+cd /soft/hadoop/logs && rm -rf *
 ssh s202 rm -rf /soft/hadoop/logs/*
 ssh s203 rm -rf /soft/hadoop/logs/*
 ssh s204 rm -rf /soft/hadoop/logs/*
