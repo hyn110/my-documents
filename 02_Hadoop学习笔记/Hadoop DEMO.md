@@ -30,18 +30,209 @@
    依赖:
 
 ```xml
-<dependencies>
-    <dependency>
-        <groupId>org.apache.hadoop</groupId>
-        <artifactId>hadoop-core</artifactId>
-        <version>1.2.1</version>
-    </dependency>
-    <dependency>
-        <groupId>org.apache.hadoop</groupId>
-        <artifactId>hadoop-common</artifactId>
-        <version>2.7.2</version>
-    </dependency>
-</dependencies>
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.fmi110</groupId>
+    <artifactId>hadoop</artifactId>
+    <version>1.0-SNAPSHOT</version>
+    <modules>
+        <module>../01_hdfs_mr</module>
+        <module>../02_hdfs_filesystem</module>
+    </modules>
+    <packaging>pom</packaging>
+
+<dependencyManagement>
+    <dependencies>
+
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-log4j12</artifactId>
+            <version>1.7.24</version>
+        </dependency>
+        <dependency>
+            <groupId>log4j</groupId>
+            <artifactId>log4j</artifactId>
+            <version>1.2.17</version>
+        </dependency>
+    </dependencies>
+</dependencyManagement>
+
+    <dependencies>
+
+        <dependency>
+            <groupId>org.apache.hadoop</groupId>
+            <artifactId>hadoop-hdfs</artifactId>
+            <version>2.7.3</version>
+            <!--<exclusions>-->
+                <!--<exclusion>-->
+                    <!--<artifactId>netty</artifactId>-->
+                    <!--<groupId>io.netty</groupId>-->
+                <!--</exclusion>-->
+                <!--<exclusion>-->
+                    <!--<artifactId>jsr305</artifactId>-->
+                    <!--<groupId>com.google.code.findbugs</groupId>-->
+                <!--</exclusion>-->
+            <!--</exclusions>-->
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.hadoop</groupId>
+            <artifactId>hadoop-client</artifactId>
+            <version>2.7.3</version>
+            <!--<exclusions>-->
+                <!--<exclusion>-->
+                    <!--<artifactId>commons-logging</artifactId>-->
+                    <!--<groupId>commons-logging</groupId>-->
+                <!--</exclusion>-->
+                <!--<exclusion>-->
+                    <!--<artifactId>guava</artifactId>-->
+                    <!--<groupId>com.google.guava</groupId>-->
+                <!--</exclusion>-->
+                <!--<exclusion>-->
+                    <!--<artifactId>slf4j-api</artifactId>-->
+                    <!--<groupId>org.slf4j</groupId>-->
+                <!--</exclusion>-->
+                <!--<exclusion>-->
+                    <!--<artifactId>slf4j-log4j12</artifactId>-->
+                    <!--<groupId>org.slf4j</groupId>-->
+                <!--</exclusion>-->
+                <!--<exclusion>-->
+                    <!--<artifactId>jackson-core-asl</artifactId>-->
+                    <!--<groupId>org.codehaus.jackson</groupId>-->
+                <!--</exclusion>-->
+                <!--<exclusion>-->
+                    <!--<artifactId>log4j</artifactId>-->
+                    <!--<groupId>log4j</groupId>-->
+                <!--</exclusion>-->
+                <!--<exclusion>-->
+                    <!--<artifactId>jackson-mapper-asl</artifactId>-->
+                    <!--<groupId>org.codehaus.jackson</groupId>-->
+                <!--</exclusion>-->
+
+                <!--<exclusion>-->
+                    <!--<artifactId>commons-codec</artifactId>-->
+                    <!--<groupId>commons-codec</groupId>-->
+                <!--</exclusion>-->
+                <!--<exclusion>-->
+                    <!--<artifactId>commons-lang</artifactId>-->
+                    <!--<groupId>commons-lang</groupId>-->
+                <!--</exclusion>-->
+            <!--</exclusions>-->
+        </dependency>
+
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.12</version>
+            <scope>test</scope>
+        </dependency>
+
+
+        <!-- ZK -->
+        <dependency>
+            <groupId>org.apache.zookeeper</groupId>
+            <artifactId>zookeeper</artifactId>
+            <version>3.4.9</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-log4j12</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>com.101tec</groupId>
+            <artifactId>zkclient</artifactId>
+            <version>0.2</version>
+            <exclusions>
+                <exclusion>
+                    <artifactId>slf4j-api</artifactId>
+                    <groupId>org.slf4j</groupId>
+                </exclusion>
+                <exclusion>
+                    <artifactId>log4j</artifactId>
+                    <groupId>log4j</groupId>
+                </exclusion>
+                <exclusion>
+                    <artifactId>slf4j-log4j12</artifactId>
+                    <groupId>org.slf4j</groupId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <!-- https://mvnrepository.com/artifact/org.projectlombok/lombok -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>1.16.18</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-log4j12</artifactId>
+            <!--<version>1.7.24</version>-->
+        </dependency>
+        <dependency>
+            <groupId>log4j</groupId>
+            <artifactId>log4j</artifactId>
+            <!--<version>1.2.17</version>-->
+        </dependency>
+
+        <dependency>
+            <groupId>mysql</groupId>
+            <artifactId>mysql-connector-java</artifactId>
+            <version>5.1.40</version>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.6.2</version>
+                <configuration>
+                    <!-- 配置使用的 jdk 版本 -->
+                    <target>1.8</target>
+                    <source>1.8</source>
+                    <encoding>UTF-8</encoding>
+                    <!--项目中在 lib 目录下放置 jar 时需声明,否则打包时jar丢失-->
+                    <compilerArguments>
+                        <extdirs>${project.basedir}/src/main/webapp/WEB-INF/lib</extdirs>
+                    </compilerArguments>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.tomcat.maven</groupId>
+                <artifactId>tomcat7-maven-plugin</artifactId>
+                <version>2.2</version>
+                <configuration>
+                    <!-- 配置上下文路径和端口号 -->
+                    <path>/</path>
+                    <port>8083</port>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-war-plugin</artifactId>
+                <version>2.6</version>
+                <configuration>
+                    <!-- 配置后项目中没有web.xml文件时,项目不提示错误 -->
+                    <failOnMissingWebXml>false</failOnMissingWebXml>
+                </configuration>
+            </plugin>
+
+
+        </plugins>
+    </build>
+</project>
 ```
 
 ​	天气数据如下
@@ -321,6 +512,8 @@ public class FileSystemCat {
 }
 ```
 
+![](img/3-4.png)
+
 #### 3 通过 FileDataOutputStream 写入文件到 hdfs
 
 ```java
@@ -354,6 +547,8 @@ public class FileCopyWithProgress {
     }
 }
 ```
+
+![](img/3-5.png)
 
 #### 4 FileStatus 获取文件元信息和文件路径信息
 
@@ -616,3 +811,573 @@ FileSystem.get(conf)
                   .delete(new Path(args[1]), true);
 ```
 
+#### 7 文件系统一致模型(coherency model)
+
+```java
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FSDataOutputStream;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.hdfs.MiniDFSCluster;
+
+import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertThat;
+
+public class CoherencyModelTest {
+    private MiniDFSCluster cluster; // use an in-process HDFS cluster for testing
+    private FileSystem     fs;
+
+    @Before
+    public void setUp() throws IOException {
+        Configuration conf = new Configuration();
+        if (System.getProperty("test.build.data") == null) {
+            System.setProperty("test.build.data", "/tmp");
+        }
+        cluster = new MiniDFSCluster.Builder(conf).build();
+        fs = cluster.getFileSystem();
+    }
+
+    @After
+    public void tearDown() throws IOException {
+        fs.close();
+        cluster.shutdown();
+    }
+
+    /**
+     * 文件create后在 namenode 节点立即可见
+     */
+    @Test
+    public void fileExistsImmediatelyAfterCreation() throws IOException {
+        Path p = new Path("p");
+        fs.create(p);
+        assertThat(fs.exists(p), is(true));
+        assertThat(fs.delete(p, true), is(true));
+    }
+
+    /**
+     * 文件内容即使调用了 flush 也不能保证立即可见(当前正在写入的块对其他 reader 不可见)
+     */
+    @Test
+    public void fileContentIsNotVisibleAfterFlush() throws IOException {
+        Path         p   = new Path("p");
+        OutputStream out = fs.create(p);
+        out.write("content".getBytes("UTF-8"));
+        out.flush();
+
+        assertThat(fs.getFileStatus(p)
+                     .getLen(), is(0L)); // flush后文件内容长度仍为0
+
+        out.close();
+        assertThat(fs.delete(p, true), is(true));
+    }
+
+    /**
+     * 调用 hflush() 方法强行同步所有缓存和数据节点 , 这样能保证写入的文件均到达所有
+     * datanode 的写入管道并且对所有新的 reader 可见 . 这种方法有许多额外的开销,所以
+     * 应用中需要权衡好鲁棒性和吞吐量 , 确定合适的调用频率
+     */
+    @Test
+    public void fileContentIsVisibleAfterHFlush() throws IOException {
+        Path               p   = new Path("p");
+        FSDataOutputStream out = fs.create(p);
+        out.write("content".getBytes("UTF-8"));
+        out.hflush();
+
+        assertThat(fs.getFileStatus(p)
+                     .getLen(), is(((long) "content".length())));
+//                     .getLen(), is(0L));
+
+        out.close();
+        assertThat(fs.delete(p, true), is(true));
+    }
+
+    /**
+     * 调用 hsync() 强行同步
+     */
+    @Test
+    public void fileContentIsVisibleAfterHSync() throws IOException {
+        Path               p   = new Path("p");
+        FSDataOutputStream out = fs.create(p);
+        out.write("content".getBytes("UTF-8"));
+        out.hsync(); // 强行同步
+
+        assertThat(fs.getFileStatus(p)
+                     .getLen(), is(((long) "content".length())));
+        out.close();
+        assertThat(fs.delete(p, true), is(true));
+    }
+
+    /**
+     * 调用 sync() 方法进行同步, 该api据说要被遗弃???
+     */
+    @Test
+    public void localFileContentIsVisibleAfterFlushAndSync() throws IOException {
+        File localFile = File.createTempFile("tmp", "");
+        assertThat(localFile.exists(), is(true));
+
+        FileOutputStream out = new FileOutputStream(localFile);
+        out.write("content".getBytes("UTF-8"));
+        out.flush(); // flush to operating system
+        out.getFD()
+           .sync(); // sync to disk
+        assertThat(localFile.length(), is(((long) "content".length())));
+
+        out.close();
+        assertThat(localFile.delete(), is(true));
+    }
+
+    @Test
+    public void fileContentIsVisibleAfterClose() throws IOException {
+        Path         p   = new Path("p");
+        OutputStream out = fs.create(p);
+        out.write("content".getBytes("UTF-8"));
+
+        out.close();
+        assertThat(fs.getFileStatus(p)
+                     .getLen(), is(((long) "content".length())));
+
+        assertThat(fs.delete(p, true), is(true));
+    }
+
+}
+```
+
+## 3 Hadoop 的IO操作
+
+### 1 数据完整性
+
+1. hdfs 客户端在写入或读取文件时,都会计算(写入)和验证(读取时)校验和(CRC-32校验) . 默认情况下检验单位是 512 字节,生成的校验和为 4 个字节,所以存储校验和的开销小于 1% , 是可以接受的
+
+   > `io.bytes.per.checksum`   指定的校验数据块的大小
+
+2. 每个 datanode 节点会在后台运行一个 DataBlockScanner , 定期验证存储在当前节点的数据块 , 并尝试处理损坏的数据块(通过数据副本复制新的块,然后删除损坏的块,保证数据副本因子(replication factor)在期望水平)
+
+### 2 压缩
+
+​	压缩的好处:
+
+	1. 减少存储文件所需要的磁盘空间
+	2. 加速数据在网络和磁盘上的传输
+
+![](img/3-7.png)
+
+> 压缩工具都提供了 9 个不同的选项  , 例如 : `gzip -1 file`
+>
+> `1 --> 速度最优`
+>
+> `9 --> 体积最优`
+
+​	Codec 实现了压缩-解压缩算法 , Hadoop 实现的 codec 例举如下 :
+
+| 压缩格式 | HadoopCompressionCodec                     | 是否可切分 |
+| -------- | ------------------------------------------ | ---------- |
+| DEFLATE  | org.apache.hadoop.io.compress.DefaultCodec |            |
+| gzip     | org.apache.hadoop.io.compress.GzipCodec    |            |
+| bzip2    | org.apache.hadoop.io.compress.BZip2Codec   | 是         |
+| LZO      | com.hadoop.compression.lzo.LzopCodec       |            |
+| LZ4      | org.apache.hadoop.io.compress.Lz4Codec     |            |
+| Snappy   | org.apache.hadoop.io.compress.SnappyCodec  |            |
+
+​	使用方式 : 使用 codec对象对输入/输出流进行包裹即可:
+
+```java
+InputStream in   = codec.createInputStream(fs.open(inPath));   // 创建一个带压缩算法的输入流
+OutputStream out = codec.createOutputStream(System.out);	   // 带压缩算法的输出流	
+```
+
+1. 1. 根据文件拓展名推断 CompressionCodec 并解压文件
+
+```java
+import lombok.extern.slf4j.Slf4j;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.IOUtils;
+import org.apache.hadoop.io.compress.CompressionCodec;
+import org.apache.hadoop.io.compress.CompressionCodecFactory;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URI;
+
+/**
+ * 根据输入文件名的拓展名推断codec 并解压文件,输出到控制台
+ *
+ * @author fmi110
+ * @Date 2018/4/8 20:52
+ */
+@Slf4j
+public class FileDecompressor {
+    public static void main(String[] args) throws IOException {
+        String        uri  = args[0];
+        Configuration conf = new Configuration();
+        FileSystem    fs   = FileSystem.get(URI.create(uri), conf);
+
+        Path                    inputPath = new Path(uri);
+        CompressionCodecFactory factory   = new CompressionCodecFactory(conf);
+        CompressionCodec        codec     = factory.getCodec(inputPath);
+
+        if (null == codec) {
+            log.error("输入的文件后缀名有错...path = {}", uri);
+            System.exit(-1);
+        }
+
+        // 获取输出文件名
+        String outputUri = CompressionCodecFactory.removeSuffix(uri, codec.getDefaultExtension());
+
+        InputStream  in  = null;
+//        OutputStream out = null;
+        try {
+            in = codec.createInputStream(fs.open(inputPath));
+//            out = fs.create(new Path(outputUri));
+            IOUtils.copyBytes(in,System.out,4096,false);
+        }finally {
+            IOUtils.closeStream(in);
+//            IOUtils.closeStream(out);
+        }
+    }
+}
+```
+
+> 核心 api :
+>
+> `InputStream in = FileSystem.get(URI.create(uri),conf).open(new Path(uri));`
+>
+> `CompressionCodec = new CompressionCodecFactory(conf).getCodec(new Path(uri));`
+
+2. 对查找气温作业所产生的输出进行压缩
+
+```java
+import com.fmi110.mapper.MaxTemperatureMapper;
+import com.fmi110.reducer.MaxTemperatureReducer;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.io.compress.GzipCodec;
+import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+
+
+/**
+ * @author fmi110
+ * @Date 2018/4/8 21:31
+ */
+@Slf4j
+public class MaxTemperatureWithCompression {
+    public static void main(String[] args) throws Exception {
+        if (args.length < 2) {
+            log.error("输出参数少于2...");
+            System.exit(-1);
+        }
+
+        Configuration conf = new Configuration() ;
+        Job           job = Job.getInstance(conf);
+        job.setJarByClass(MaxTemperatureWithCompression.class);
+
+        FileInputFormat.addInputPath(job,new Path(args[0]));
+        FileOutputFormat.setOutputPath(job,new Path(args[1]));
+
+        // 设置输出使用的压缩算法
+        FileOutputFormat.setOutputCompressorClass(job, GzipCodec.class);
+
+        job.setMapperClass(MaxTemperatureMapper.class);
+        job.setMapOutputKeyClass(Text.class);
+        job.setMapOutputValueClass(IntWritable.class);
+
+        job.setReducerClass(MaxTemperatureReducer.class);
+        job.setCombinerClass(MaxTemperatureReducer.class);
+
+        System.exit(job.waitForCompletion(true)?0:1);
+    }
+}
+```
+
+> `FileOutputFormat.setOutputCompressor(job,XXXCodec.class);`
+
+
+
+### 3 java数据类型的 writable 类
+
+![](img/3-6.png)
+
+```java
+public class WritableTestBase {
+  
+  // 序列化一个 Writable 对象 --> byte[]
+  public static byte[] serialize(Writable writable) throws IOException {
+    ByteArrayOutputStream out = new ByteArrayOutputStream();
+    DataOutputStream dataOut = new DataOutputStream(out);
+    writable.write(dataOut);
+    dataOut.close();
+    return out.toByteArray();
+  }
+  // ^^ WritableTestBase
+  
+  // 反序列化 byte[] --> Writable 对象 
+  public static byte[] deserialize(Writable writable, byte[] bytes)
+      throws IOException {
+    ByteArrayInputStream in = new ByteArrayInputStream(bytes);
+    DataInputStream dataIn = new DataInputStream(in);
+    writable.readFields(dataIn);
+    dataIn.close();
+    return bytes;
+  }
+
+  // Writable --> byte[] --> String
+  public static String serializeToString(Writable src) throws IOException {
+    return StringUtils.byteToHexString(serialize(src));
+  }
+  // dest对象 (序列化)--> byte[] (反序列化)--> src 对象
+  public static String writeTo(Writable src, Writable dest) throws IOException {
+    byte[] data = deserialize(dest, serialize(src));
+    return StringUtils.byteToHexString(data);
+  }
+
+}
+```
+
+
+
+#### 1 ArrayWritable
+
+```java
+    ArrayWritable writable = new ArrayWritable(Text.class);
+    
+    writable.set(new Text[] { new Text("cat"), new Text("dog") });
+    
+    TextArrayWritable dest = new TextArrayWritable();
+    WritableUtils.cloneInto(dest, writable);
+
+    assertThat(dest.get().length, is(2));
+    // TODO: fix cast, also use single assert
+    assertThat((Text) dest.get()[0], is(new Text("cat")));
+    assertThat((Text) dest.get()[1], is(new Text("dog")));
+    
+    Text[] copy = (Text[]) dest.toArray();
+    assertThat(copy[0], is(new Text("cat")));
+    assertThat(copy[1], is(new Text("dog")));
+```
+
+#### 2 BooleanWritable
+
+```java
+    BooleanWritable src = new BooleanWritable(true);
+    BooleanWritable dest = new BooleanWritable();
+
+    assertThat(writeTo(src, dest), is("01"));
+    assertThat(dest.get(), is(src.get()));
+```
+
+#### 3 MapWritable
+
+```java
+// == MapWritableTest
+import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertThat;
+
+import java.io.IOException;
+import org.apache.hadoop.io.*;
+import org.junit.Test;
+
+public class MapWritableTest extends WritableTestBase {
+  
+  @Test
+  public void mapWritable() throws IOException {
+    // vv MapWritableTest
+    MapWritable src = new MapWritable();
+    src.put(new IntWritable(1), new Text("cat"));
+    src.put(new VIntWritable(2), new LongWritable(163));
+    
+    MapWritable dest = new MapWritable();
+    WritableUtils.cloneInto(dest, src);
+    assertThat((Text) dest.get(new IntWritable(1)), is(new Text("cat")));
+    assertThat((LongWritable) dest.get(new VIntWritable(2)),
+        is(new LongWritable(163)));
+    // ^^ MapWritableTest
+  }
+
+  @Test
+  public void setWritableEmulation() throws IOException {
+    MapWritable src = new MapWritable();
+    src.put(new IntWritable(1), NullWritable.get());
+    src.put(new IntWritable(2), NullWritable.get());
+    
+    MapWritable dest = new MapWritable();
+    WritableUtils.cloneInto(dest, src);
+    assertThat(dest.containsKey(new IntWritable(1)), is(true));
+  }
+}
+```
+
+### 4 基于文件的数据结构
+
+​	对于基于mapreduce 的数据处理 , 将每个二进制数据大对象(blob)单独放在各自的文件中不能实现可拓展性 , 所以 Hadoop 为次开发了很多更高层次的容器 , 比如 SequenceFile  , MapFile 等
+
+![](img/3-8.png)
+
+![](img/3-9.png)
+
+#### 1 SequenceFile
+
+​	SequenceFile(顺序文件)是以键值形式存储数据的 , 可以作为小文件的容器 .
+
+```
+hadoop fd -text 顺序文件
+```
+
+> 该命令能以文本的形式显示顺序文件, 如果顺序文件包含自定义的 键或值的类,需要保证这些类位于 Hadoop 类路径下	
+
+1. 写操作
+
+   > `SequenceFile.Writer writer = SequenceFile.createWriter();`
+   >
+   > `writer.appen(key,value);`
+
+```java
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.IOUtils;
+import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.SequenceFile;
+import org.apache.hadoop.io.Text;
+
+import java.io.IOException;
+import java.net.URI;
+
+
+/**
+ * 顺序文件的写操作
+ *
+ * @author fmi110
+ * @Date 2018/4/8 22:28
+ */
+public class SequenceFileWriterDemo {
+    public static final String[] DATA = {
+            "窗前明月光",
+            "疑是地上霜",
+            "举头望明月",
+            "低头思故乡"
+    };
+
+    public static void main(String[] args) throws IOException {
+        String outPath = "00TT/squencefile.seq";
+
+        Configuration conf = new Configuration();
+        FileSystem    fs   = FileSystem.get(URI.create(outPath), conf);
+        Path          path = new Path(outPath);
+
+        IntWritable key   = new IntWritable(); // 顺序文件的key
+        Text        value = new Text();        // 顺序文件的value
+
+        SequenceFile.Writer writer = null;
+        try {
+            writer = SequenceFile.createWriter(fs, conf, path, key.getClass(), value.getClass());
+            for (int i = 0; i < 100; i++) {
+                key.set(i);
+                value.set(DATA[i % DATA.length]);
+                System.out.printf("[%s]\t%s\t%s\n", writer.getLength(), key.get(), value.toString());
+
+                writer.append(key, value); // 内容写入顺序文件
+            }
+        } finally {
+            IOUtils.closeStream(writer);
+        }
+
+    }
+}
+```
+
+2. 读操作
+
+   > SequenceFile.Reader.next() 进行迭代 , 非空时循环
+
+```java
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.IOUtils;
+import org.apache.hadoop.io.SequenceFile;
+import org.apache.hadoop.io.Writable;
+import org.apache.hadoop.util.ReflectionUtils;
+
+import java.io.IOException;
+import java.net.URI;
+
+
+/**
+ * 顺序文件的读操作
+ *
+ * @author fmi110
+ * @Date 2018/4/8 22:28
+ */
+public class SequenceFileReaderDemo {
+
+
+    public static void main(String[] args) throws IOException {
+        String inPath = "00TT/squencefile.seq";
+
+        Configuration conf = new Configuration();
+        FileSystem    fs   = FileSystem.get(URI.create(inPath), conf);
+        Path          path = new Path(inPath);
+
+        SequenceFile.Reader reader = null;
+        try {
+            reader = new SequenceFile.Reader(fs, path, conf);
+            Writable key   = (Writable) ReflectionUtils.newInstance(reader.getKeyClass(), conf);
+            Writable value = (Writable) ReflectionUtils.newInstance(reader.getValueClass(), conf);
+
+            long position = reader.getPosition();
+            while (reader.next(key, value)) {
+                String syncSeen = reader.syncSeen() ? "*" : ""; // 是否是同步点
+
+                System.out.printf("[%s%s]\t%s\t%s\n", position, syncSeen, key, value);
+                
+                position = reader.getPosition(); // 获取下一次起始的位置
+            }
+        } finally {
+            IOUtils.closeStream(reader);
+        }
+
+    }
+}
+```
+
+​	输出如下:
+
+```properties
+[1793]	45	疑是地上霜
+[1830]	46	举头望明月
+[1867]	47	低头思故乡
+[1904]	48	窗前明月光
+[1941]	49	疑是地上霜
+[1978]	50	举头望明月
+[2015*]	51	低头思故乡
+[2072]	52	窗前明月光
+[2109]	53	疑是地上霜
+[2146]	54	举头望明月
+[2183]	55	低头思故乡
+```
+
+> 可以看到 2015 处是一个同步点
+>
+> 同步点 : 指数据读取迷路(lost)后能够再一次与记录边界同步的数据流的某个位置 , 同步点由SequenceFile.Writer 记录 , 其在顺序文件写入过程中插入一个特殊项以便每隔几个记录便有一个同步标识.这样的特殊项存储开销很小,不到1%
+
+​	在文件中查找记录边界的方法
+
+```
+SequenceFile.Reader.sync(long position);
+```
+
+> 该方法将读取位置定位到下一个同步点 , 如果 position 之后没有同步点 , 则读取位置将指向文件末尾
+
+​	手动插入同步点的方法
+
+```
+SequenceFile.Writer.sync();
+```
+
+> 在当前位置插入同步点
