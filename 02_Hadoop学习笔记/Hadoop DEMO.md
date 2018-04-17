@@ -1212,7 +1212,7 @@ public class MapWritableTest extends WritableTestBase {
 }
 ```
 
-### 4 基于文件的数据结构
+### 4 基于文件的数据结构(二进制文件)
 
 ​	对于基于mapreduce 的数据处理 , 将每个二进制数据大对象(blob)单独放在各自的文件中不能实现可拓展性 , 所以 Hadoop 为次开发了很多更高层次的容器 , 比如 SequenceFile  , MapFile 等
 
@@ -1226,6 +1226,8 @@ public class MapWritableTest extends WritableTestBase {
 
 ```
 hadoop fd -text 顺序文件
+
+hadoop fs -text sorted/part-00000 | head
 ```
 
 > 该命令能以文本的形式显示顺序文件, 如果顺序文件包含自定义的 键或值的类,需要保证这些类位于 Hadoop 类路径下	
@@ -1381,3 +1383,471 @@ SequenceFile.Writer.sync();
 ```
 
 > 在当前位置插入同步点
+
+#### 2 MapFile
+
+​	MapFile 是已经经过排序的 SequenceFile , 它有索引 , 所以可以按键查找.
+
+```java
+public class MapFileWriteDemo {
+  
+  private static final String[] DATA = {
+    "One, two, buckle my shoe",
+    "Three, four, shut the door",
+    "Five, six, pick up sticks",
+    "Seven, eight, lay them straight",
+    "Nine, ten, a big fat hen"
+  };
+  
+  public static void main(String[] args) throws IOException {
+    String uri = args[0];
+    Configuration conf = new Configuration();
+    FileSystem fs = FileSystem.get(URI.create(uri), conf);
+
+    IntWritable key = new IntWritable();
+    Text value = new Text();
+    MapFile.Writer writer = null;
+    try {
+      writer = new MapFile.Writer(conf, fs, uri,
+          key.getClass(), value.getClass());
+      
+      for (int i = 0; i < 1024; i++) {
+        key.set(i + 1);
+        value.set(DATA[i % DATA.length]);
+        writer.append(key, value);
+      }
+    } finally {
+      IOUtils.closeStream(writer);
+    }
+  }
+}
+```
+
+## 4 MapReduce 应用开发
+
+### 1 用于配置的API
+
+​	Configuration 类用于加载配置文件 , 多个配置文件的合并如下:
+
+```java
+Configration conf = new Configuration();
+conf.addResource("configuration-1.xml");
+conf.addResource("configuration-2.xml");
+```
+
+​	如果配置文件中声明了相同的配置项,则后添加的生效!!!
+
+### 2 MRUnit 测试
+
+​	MRUnit 与 junit 一起使用 , 可以在正常的开发环境中运行 MapReduce 作业的测试 ,非常方便
+
+```xml
+        <dependency>
+            <groupId>org.apache.mrunit</groupId>
+            <artifactId>mrunit</artifactId>
+            <classifier>hadoop2</classifier>
+            <version>1.1.0</version>
+            <scope>test</scope>
+        </dependency>
+```
+
+#### 1 Mapper 测试
+
+```java
+import com.fmi110.mapper.MaxTemperatureMapper;
+import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mrunit.mapreduce.MapDriver;
+import org.junit.Test;
+
+import java.io.IOException;
+
+
+/**
+ * MRUnit 的 mapper 测试
+ * @author fmi110
+ * @Date 2018/4/10 22:45
+ */
+public class MapperTest {
+    @Test
+    public void testMapper() throws IOException {
+        Text value = new Text("0043012650999991949032418004+62300+010750FM-12+048599999V0202701N00461220001CN0500001N9+00781+99999999999") ;
+        new MapDriver<LongWritable,Text,Text,IntWritable>()
+                .withMapper(new MaxTemperatureMapper())
+                .withInput(new LongWritable(0),value)
+                .withOutput(new Text("1949"),new IntWritable(78))
+                .runTest();
+    }
+}
+```
+
+> MaxTemperatureMapper 是第一章的类
+
+#### 2 Reducer 测试
+
+```java
+import com.fmi110.reducer.MaxTemperatureReducer;
+import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mrunit.mapreduce.ReduceDriver;
+import org.junit.Test;
+
+import java.io.IOException;
+import java.util.Arrays;
+
+/**
+ * @author fmi110
+ * @Date 2018/4/14 9:13
+ */
+public class ReducerTest {
+    @Test
+    public void testReducer() throws IOException {
+        new ReduceDriver<Text, IntWritable,Text,IntWritable>()
+                .withReducer(new MaxTemperatureReducer())
+                .withInput(new Text("1988"), 
+                           Arrays.asList(new IntWritable(10),new IntWritable(5)))
+                .withOutput(new Text("1988"),new IntWritable(10))
+                .runTest();
+    }
+}
+```
+
+### 3 辅助类 Tool,ToolRunner 和 GenericOptionsParser
+
+​	为了简化命令行方式运行作业, Hadoop 自带了一些辅助类 , 通常我们先实现 Tool 接口,然后通过 ToolRunner 来运行应用程序 . ToolRunner 内部会调用 GenericOptionsParser .
+
+​	GenericOptionsParser 支持的选项如下 :
+
+```sh
+Generic options supported are
+-conf <configuration file>     specify an application configuration file
+-D <property=value>            use value for given property
+-fs <local|namenode:port>      specify a namenode
+-jt <local|resourcemanager:port>    specify a ResourceManager
+-files <comma separated list of files>    specify comma separated files to be copied to the map reduce cluster
+-libjars <comma separated list of jars>    specify comma separated jar files to include in the classpath.
+-archives <comma separated list of archives>    specify comma separated archives to be unarchived on the compute machines.
+
+The general command line syntax is
+# 语法
+
+bin/hadoop command [genericOptions] [commandOptions]
+```
+
+| 选项                                   | 描述                                   |
+| -------------------------------------- | -------------------------------------- |
+| -conf <configuration file>             | 指定配置文件.                          |
+| -D <property=value>                    | 设置属性,可用于覆盖默认属性值          |
+| -fs <local\|namenode:port>             | 用指定的uri设置默认的文件系统          |
+| -files <comma separated list of files> | 使用 `,` 分隔文件,文件被复制到集群环境 |
+
+```java
+/**
+ * 通过 ToolRunner 来运行程序
+ *
+ * @author fmi110
+ * @Date 2018/4/14 9:28
+ */
+public class MaxTempuratureDriver extends Configured implements Tool {
+    /**
+     * Execute the command with the given arguments.
+     *
+     * @param args command specific arguments.
+     * @return exit code.
+     * @throws Exception
+     */
+    @Override
+    public int run(String[] args) throws Exception {
+
+        if (args.length < 2) {
+            System.err.printf("使用语法 : %s [可选命令选项] <input> <output>\n", this.getClass()
+                                                                           .getSimpleName());
+            ToolRunner.printGenericCommandUsage(System.out);
+            return -1;
+        }
+
+        Job job = Job.getInstance(this.getConf());
+        job.setJobName("MaxTempraturaDriver Job");
+        job.setJarByClass(MaxTempuratureDriver.class);
+
+        FileInputFormat.addInputPath(job, new Path(args[0]));
+        FileOutputFormat.setOutputPath(job, new Path(args[1]));
+
+        job.setMapperClass(MaxTemperatureMapper.class);
+        job.setCombinerClass(MaxTemperatureReducer.class);
+        job.setReducerClass(MaxTemperatureReducer.class);
+
+        job.setOutputKeyClass(Text.class);
+        job.setOutputValueClass(IntWritable.class);
+
+        return job.waitForCompletion(true) ? 0 : 1;
+    }
+
+    public static void main(String[] args) throws Exception {
+        int exitCode = ToolRunner.run(new MaxTempuratureDriver(), args);
+        System.exit(exitCode);
+    }
+}
+```
+
+### 4 MapReduce 的 Web 界面
+
+​	Hadoop 提供了 Web 界面用来浏览作业信息 , 对于跟踪作业运行进度 , 查看作业完成后的统计信息和日志非常有用 . 可以在 `http://resource-manager-host:8088/`  找到用户的界面信息 , 如下图所示
+
+> `resource-manager-host`  是资源管理器节点的域名
+
+#### 1 资源管理器界面
+
+![](img/3-10.png)
+
+#### 2 MapReduce 作业界面
+
+​	在资源管理界面的 `Tracking UI`  链接进入 `application master` 的 web 界面 , 在页面可以看到 job 作业对应的信息
+
+#### 3 获取结果
+
+​	作业完成时有很多方法获取结果 . 每个 reducer 产生一个输出文件 , 因此在 max-temp 目录会有多个部分文件(part file) , 命名为 part-0000 , part-0001...
+
+​	此时可以使用 hadoop fs 命令 的 -getmerge 选项将其合并为本地文件爱你系统 的一个文件:
+
+```sh
+hadoop fs -getmerge max-temp max-temp-local
+sort max-temp-local | tail       # 排序并输出文件内容
+```
+
+> `-getmerge`  会访问源模式指定目录下的所有文件
+
+#### 4 Hadoop 日志
+
+​	针对不同的用户 , Hadoop 在不同的地方生成日志 .
+
+​	YARN 有日志聚合 (log  aggregation) 服务 , 可以取到已完成的应用的任务日志 , 并把其搬移到 HDFS 中 , 在那里任务日志被存储在一个容器文件中用于存档 . 如果服务已被启用(通过在集群上将 `yarn.log-aggregation-enable`  设置为 true ) , 可以通过点击任务尝试 web 界面中 , 或使用 mapred job -logs 命令查看任务日志.
+
+​	默认情况下 , 日志聚合服务处于关闭状态 . 此时 , 可以通过访问节点管理界面( `http://node-manager-host:8042/logs/userlogs` )  查看任务日志 . 
+
+| 日志               | 主要对象 | 描述                                                         |
+| ------------------ | -------- | ------------------------------------------------------------ |
+| 系统守护进程日志   | 管理员   | 每个 Hadoop 守护进程产生一个日志和另一个(文件合并标准输出和错误).这些文件分别写入 `HADOOP_LOG_DIR` 环境变量定义的目录 |
+| HDFS审计日志       | 管理员   | 日志记录所有 HDFS 请求 , 默认是关闭状态,虽然该日志存放位置可以配置, 但一般写入 namenode 的日志 |
+| MapReduce 作业历史 | 用户     | 记录作业运行期间发生的事件.集中保存在 HDFS                   |
+| MapReduce          | 用户     | 每个任务子进程都用 log4j 产生一个日志文件(称作 syslog ) , 一个保存发到标准输出(stdout)数据的文件 , 一个保存标准错误(stderr)的文件.这些文件写入到 YARN_LOG_DIR 环境定义的目录的userlogs 的子目录中 |
+
+##5 MapReduce 工作机制
+
+![](img/4-1.png)
+
+### 1 作业的提交
+
+​	`Job.submit()`  `-->`  `submitJobInternal()` 方法提交 . 而 `job.waitForCompletion()`  方法每秒轮训作业进度 , 如果作业成功就显示作业计数器. 提交作业过程如下:
+
+1. client 向 RM 请求一个新应用ID(MapReduce 作业ID)
+
+2. 检查作业输出 . 如果输出目录已存在则抛异常
+
+3. 计算作业的输入分片
+
+4. 将运行作业所需要的资源(作业依赖的 jar 文件 , 配置文件 , 计算所得到的输入分片)复制到一个以作业 ID 命名的目录下的共享文件系统中
+
+   > 作业 jar 复本较多 (由 `mapreduce.client.submit.file.replication` 属性控制 , 默认是 10 ),因此在运行作业时,集群有很多个复本可供节点管理器访问
+
+5. 调用 RM 的 submitApplication() 方法提交作业 ,见上图步骤4
+
+### 2 作业的初始化
+
+​	1. 接下来 RM 将请求传递给 Yarn 的调度器(scheduler) . 调度器分配一个容器 , 然后资源管理器在节点管理器的管理下在容器中启动 application master 进程(步骤 5,6)
+
+​	2. application master 是一个java 进程,它的 main class 是 MRAppMaster , 它 创建多个 `bookingkeeper object`  来跟踪作业进度 , 然后接收来自共享文件系统的 , 在客户端计算的输入分片(步骤7) ; 接下来对没一个分片创建一个 map 任务对象和一定数量的 reduce 任务对象 . 任务的 ID 在此时分配
+
+> reduce 任务的对象由 `mapreduce.job.reduces` 属性或者通过 `job.setNumReduceTasks()` 确定
+>
+> ​	这里还有一个 uberized 作业的概念 ,即默认情况下作业少于10个mappper且只有一个 reducer且输入小于一个HDFS块的作业 , **uberized 作业会与 application master 运行在同一个 JVM 上!!!**
+
+	3. 最后在作业运行前, application master 调用 setupJob() 方法设置 OutputCommitter (默认为 FileOutputCommitter) , 确定作业的最终输出目录和任务输出的临时工作空间.
+
+### 3 任务的分配
+
+​	如果任务不适合作为 uber 任务运行 , application master 会向 RM 请求容器以运行所有的 map 和 reduce 任务(步骤8) 
+
+> 1. map 任务发出的请求优先级高于 reduce 任务的请求 , 因为所有的map任务必须在 reduce 排序阶段能够启动前完成
+> 2. 5%的map任务完成时 , 为 reduce 任务的请求才会发出
+
+​	reduce 任务能够在集群中的任意位置运行 , 但是 map 任务处于网络开销考虑会优先考虑数据本地化(data local) 或者 机架本地化(rack local)
+
+​	请求也为任务指定了内存需求和cpu数 , 默认情况下 , 每个 map 任务和 reduce 任务都分配到 1024 MB 的内存和一个虚拟内核 . 默认值可以在 mapred-default.xml 中找到:
+
+```xml
+<property>
+  <name>mapreduce.map.memory.mb</name>
+  <value>1024</value>
+  <description>
+      调度器(schedule)为每个 map 任务申请的内存大小
+  </description>
+</property>
+
+<property>
+  <name>mapreduce.map.cpu.vcores</name>
+  <value>1</value>
+  <description>The number of virtual cores to request from the scheduler for
+  each map task.
+  </description>
+</property>
+
+<property>
+  <name>mapreduce.reduce.memory.mb</name>
+  <value>1024</value>
+  <description>
+      reduce 任务内存的大小
+  </description>
+</property>
+
+<property>
+  <name>mapreduce.reduce.cpu.vcores</name>
+  <value>1</value>
+  <description>The number of virtual cores to request from the scheduler for
+  each reduce task.
+  </description>
+</property>
+```
+
+### 4 任务的执行
+
+​	一旦 RM 的调度器为任务分配了一个特定节点上的容器 , application master 与对应节点管理器( `NM` )进行通信并启动容器(步骤8和步骤9) , 该任务由主类( main class ) 为 YarnChild 的一个 Java 应用程序执行 .
+
+> YarnChild 在指定的 JVM 中运行 , 因此用户定义的 map 或 reduce 出现异常不会导致节点管理器的异常
+
+​	**Streaming**
+
+​	Streaming 进程运行特殊的 map 任务和 reduce 任务 , 目的是运行用户提供的可执行程序 , 并与之通信
+
+![](img/4-2.png)
+
+​	streaming 任务使用标准的输入输出流与进程进行通信 . 在任务执行过程中, java 进程都会把输入 键-值对 传给外部的进程 , 或者通过用户自定义的 map 函数和 reduce 函数来执行它并把输出键值对回传给 Java 进程 . 从节点管理器的角度看 , 就像其子进程自己在运行 map或 reduce 代码一样
+
+### 5 进度和状态的更新
+
+​	![](img/4-3.png)
+
+​	一个作业和它的每个任务都有一个状态( status ) , 包括 : 作业或任务的状态 , map 和 reduce 的进度 , 作业计数器的值 , 状态消息和描述 .
+
+​	在作业期间 , 客户端 client 每秒轮训一次 application master 以接收最新的状态 . 客户端也可以通过 job.getStatus() 方法得到一个 JobStatus 实例, 后者包含作用的所有状态信息.
+
+> 轮训间隔由属性 `mapreduce.client.progressmonitor.pollinterval` 设置
+
+### 6 作业的完成
+
+​	当 application master 收到作业最后一个任务完成的通知后 , 会把作业的状态设置为 "成功" . 当 Job 下一次轮训时 , 将结果从 job.waitForCompletion() 返回 , job 的统计信息和计数值也输出到控制台.
+
+> 通过 `mapreduce.job.end-notification.url` 属性设置一个url , 则作业完成时 , application master 会往该url 发送一个 HTTP 作业通知
+
+### 7 失败
+
+#### 1 任务运行失败
+
+ 1.   map 任务和 reduce 任务中的用户代码抛出运行异常 . 此时任务 JVM 会在退出前向其父 application master 发送错误报告 , 错误报告会被计入错误日志 , 此次任务尝试被标记为失败( fail ) , 并释放容器
+
+	2.  streaming 进程以非0退出代码,则被标记为失败
+
+	3.  任务JVM由于某种原因突然退出 , 这种情况下 , 节点管理器会注意到进程已经退出 , 并通知 application master 将此次任务尝试标记为失败
+
+	4.  任务挂起 . 当任务超过10分钟没有向 application master 报告任务进度时 , 将被标记为失败 , 之后任务JVM将被自动杀死
+
+     > 超时时间由属性  `mapreduce.task.timeout` 设置
+
+     ​
+
+     任务失败后, application master 会试图在其他的节点管理器上重新调度该任务 , 如果一个任务失败过 4 次 , 将不会再重试 , 在默认情况下 , 如果某个任务最终失败 , 整个作业都会失败
+
+     > map 重试次数由 `mapreduce.map.maxattemps` 设置
+     >
+     > reduce 由 `mapreduce.reduce.maxattemps` 设置
+
+     ​
+
+#### 2 application master 失败
+
+​	application master 默认由 2 次重试机会 , 由 `mapreduce.am.max-attempts` 控制
+
+​	YARN 对集群上运行的YARN application master 的最大尝试默认限制为 2 , 由 `yarn.resourcemanager.am.max-attempts` 设置 , 想增加 application master 的尝试次数 , 以上两个属性都得设置
+
+​	application master 恢复过程如下 : application master 会周期性的向 RM 发送心跳 , 当失败时 , RM 会在一个新的容器(NM管理)开起一个新的  master 实例 , 新实例使用作业历史来恢复失败的应用程序所运行的状态 , 使其不用重新开始.
+
+> 恢复功能默认开启 , 开关为 : `yarn.app.mapreduce.am.job.recovery.enable`
+
+​	application master 失败后,会导致 mapreduce 客户端在轮询状态更新时超时 , 此时 client 将折回 RM 重新定位新的 master 实例地址 , 并缓存
+
+#### 3 节点管理器失败
+
+​	如果 NM 失败(RM 10 分钟没收到心跳通知) , RM 将会将其从自己的节点池中移除 . 并调度启用新的容器 , 在失败的 NM 上运行的所有任务或 application master 将按照前面说的机制重新恢复 . 对于已经完成度 map任务,但map所属的作业未完成的 , master 会安排重新运行 , 因为map输出的中间结果驻留在失败的节点管理器的本地文件系统中 , 可能无法访问
+
+#### 4 资源管理器运行失败
+
+​	资源管理器(RM) 失败是非常严重的问题 , 没有RM ,作业和任务容器将无法启动 . 因此必须配额制 高可用(HA) - 双击热备配置.
+
+​	资源管理器从备机切换到主机是由故障转移控制器(failover controller) 处理的.默认的故障转义控制器是自动工作的 , 使用 ZooKeeper 的leader选举机制以确保同一时刻只有一台主管理器.
+
+​	为了应对 RM 的故障转移 , 必须对客户端和 NM 进行配置 , 因为它们可能同时和两个 RM打交道 , 它们以轮询的方式试图连接每一个 RM , 直到找到主RM
+
+### 8 shuffle 和排序
+
+​	MapReduce 确保每个 reducer 的输入都是按键排序的 . **系统执行排序 , 将map输出作为输入传给reducer的过程称为 shuffle.**
+
+#### 1 map 端
+
+​	map 函数在输出时并不是简单的写到磁盘 , 而是利用缓冲的方式写到内存并进行预排序.
+
+![](img/4-4.png)
+
+默认情况下,缓冲区为100mb , 超过阈值(0.8),一个后台线程便开始把内容溢出到磁盘 . 因此map任务写完最后一个输出记录后,会有几个溢出文件 , 在任务完成之前, 溢出文件将被合并为一个已分区且已排序的输出文件.
+
+map输出到磁盘可通过 `mapreduce.map.output.compress` 设为 true 开启压缩功能 , 压缩库由 `mapreduce.map.output.compress.codec` 指定
+
+#### 2 reduce 端
+
+​	reduce 任务的输入很可能是来自多个map任务的输出 . 因此每个 map 任务完成时 , reduce 就开始复制其输出.复制线程默认为 5 , 由 `mapreduce.reduce.shuffle.parallelcopies` 设置
+
+> map 任务完成后会向 application master 使用心跳通知 , master 知道 map 和主机位置之间的映射关系
+
+复制完所有的map输出后,reduce任务进入排序阶段(更恰当的说法是合并阶段,因为排序在map端进行) , 这个阶段将合并map输出,维持其顺序排序 
+
+最后阶段,即reduce阶段 , 直接把数据输入 reduce 函数, 在此阶段对已排序输出中的每个键调用 reduce 函数 . 并将输出直接写到输出文件系统 , 一般为 hdfs . 如果使用 hdfs , 由于节点管理器(NM)也运行数据节点 , 所以第一个块复本将被写入到本地磁盘
+
+#### 3 配置调优
+
+1. map端
+
+| 属性名称                            | 类型      | 默认值              | 说明                                                         |
+| ----------------------------------- | --------- | ------------------- | ------------------------------------------------------------ |
+| mapreduce.task.io.sort.mb           | int       | 100                 | map输出进行排序的缓冲区的大小,单位 mb                        |
+| mapreduce.map.sort.spill.percent    | float     | 0.8                 | map输出缓冲区内容溢出到磁盘的阈值                            |
+| mapreduce.task.io.sort.factor       | int       | 10                  | 排序文件时,一次最多合并的流数.这个属性也在reduce中使用 , 该值设置为100是很常见的 |
+| mapreduce.map.combine.minspills     | int       | 3                   | 运行combine所需的最好溢出文件数(如果指定了combine)           |
+| mapreduce.map.output.compress       | boolean   | true                |                                                              |
+| mapreduce.map.output.compress.codec | ClassName | org.xx.DefaultCodec |                                                              |
+| mapreduce.shuffle.max.thread        | int       | 0                   | 每个节点管理器的工作线程数,用于将map输出到reducer.这是几圈范围的设置.0代表2倍于可用的处理器数 |
+
+2. reduce端
+
+![](img/4-5.png)
+
+### 9 任务的执行
+
+#### 1 任务环境
+
+![](img/4-6.png)
+
+#### 2 推测执行
+
+​	Hadoop 不会尝试诊断或修复执行慢的任务,相反,它会启动一个相同的任务作为备份 , 当其中有一个任务先完成时,就结束另外的任务 , 这就是"推测执行"( speculative execution ) . 注意 : reduce 任务不建议开启推测执行 , 因为网络带宽资源消耗会大量增加
+
+![](img/4-7.png)
+
+#### 3 关于 OutputCommitters
+
+​	Hadoop 使用一个提交协议来确保作业和任务都完全成功或失败.这个行为通过对作业使用 OutputCommitter 实现
+
+![](img/4-8.png)
+
+> 1. setupJob() 用于初始化操作 . 如果是 FileOutputCommitter , 该方法创建最终输出目录 `${mapreduce.output.fileoutputformat.outputdir}`  , 并创建一个子目录 _temporary 作为任务输出的临时工作空间
+> 2. 作业成功则调用 commitJob() 方法 , 其会删除临时工作空间并在输出目录创建 _SUCCESS 的隐藏的标识文件,以标识作业成功 ; 失败则调用 abortJob
+> 3. 任务级别的成功和失败类似
