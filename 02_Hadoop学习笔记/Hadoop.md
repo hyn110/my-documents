@@ -140,13 +140,13 @@ vim ${HADOOP_HOME}/etc/hadoop/hdfs-site.xml  	# sh 命令
 ​	文件内容修改为下:
 
 ```Xml
-<?xml version="1.0" encoding="UTF-8"?>
-<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+<?xml version="1.0"?>
+<!-- hdfs-site.xml -->
 <configuration>
-        <property>
-                <name>dfs.replication</name>
-                <value>1</value>
-        </property>
+  <property>
+    <name>dfs.replication</name>
+    <value>1</value>
+  </property>
 </configuration>
 ```
 
@@ -163,12 +163,12 @@ vim mapred-site.xml													# 编辑文件
 
 ```Xml
 <?xml version="1.0"?>
-<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+<!-- mapred-site.xml -->
 <configuration>
-        <property>
-                <name>mapreduce.framework.name</name>
-                <value>yarn</value>
-        </property>
+  <property>
+    <name>mapreduce.framework.name</name>
+    <value>yarn</value>
+  </property>
 </configuration>
 ```
 
@@ -184,15 +184,16 @@ vim $HADOOP_HOME/etc/hadoop/yarn-site.xml    	# sh 命令
 
 ```Xml
 <?xml version="1.0"?>
+<!-- yarn-site.xml -->
 <configuration>
-	<property>
-		<name>yarn.resourcemanager.hostname</name>
-		<value>localhost</value>
-	</property>
-	<property>
-		<name>yarn.nodemanager.aux-services</name>
-		<value>mapreduce_shuffle</value>
-	</property>
+  <property>
+    <name>yarn.resourcemanager.hostname</name>
+    <value>localhost</value>
+  </property>
+  <property>
+    <name>yarn.nodemanager.aux-services</name>
+    <value>mapreduce_shuffle</value>
+  </property>
 </configuration>
 ```
 
@@ -213,7 +214,7 @@ hadoop namenode -format
    ```
 
 ```Sh
-export JAVA_HOME=/soft/jdk
+export JAVA_HOME=/soft/jdk       /usr/local/src/java
 ```
 
 > 1. `/soft/jdk` 为本地主机的 `JDK` 路径

@@ -1851,3 +1851,529 @@ map输出到磁盘可通过 `mapreduce.map.output.compress` 设为 true 开启�
 > 1. setupJob() 用于初始化操作 . 如果是 FileOutputCommitter , 该方法创建最终输出目录 `${mapreduce.output.fileoutputformat.outputdir}`  , 并创建一个子目录 _temporary 作为任务输出的临时工作空间
 > 2. 作业成功则调用 commitJob() 方法 , 其会删除临时工作空间并在输出目录创建 _SUCCESS 的隐藏的标识文件,以标识作业成功 ; 失败则调用 abortJob
 > 3. 任务级别的成功和失败类似
+
+## 6 MapReduce 的类型和格式
+
+### 1 MapReduce 类型
+
+​	map函数 , combiner 函数 , reduce 函数通常遵循如下格式 :
+
+```
+map :		(k1,v1) 			-->    list(k2,v2)
+combiner :   (k2,list(v2)) 		 --> 	(k2,list(v2))
+reduce :  	 (k2,list(v2)) 		 --> 	(k3,v3)
+```
+
+​	partition 函数对中间结果的 键值对(k2 和 v2) 进行处理 , 并返回一个分区索引(partition index)
+
+```
+partition : (k2,v2) --> integer
+```
+
+```
+public abstract class Patitioner<KEY,VALUE>{
+    public abstract int getPartition(KEY key,VALUE value,int numPartitions);
+}
+```
+
+​	由于java泛型机制存在运行时类型擦除的原因 , 所以必须手动指定输入输出的类型 , 设置的api 如下 :
+
+![](img/4-9.png)
+
+​	默认的分区函数是 HashPartitioner , 其实现如下 :
+
+```java
+public class HashPartitioner<K,V> extends Partitioner<K,V>{
+    public int getPartition(K key , V value ,int numPartitions){
+        return key.hashCode() & Integet.MAX_VALUE % numPartitions;
+    }
+}
+```
+
+​	**选择 reducer 的个数 :**(经验法则) 目标reducer 保持在每个运行5分钟左右 , 且输出的大小至少为一个 HDFS 比较合适.
+
+### 2 输入格式
+
+​	Hadoop 可以处理不同类型的数据 , 从一般文本到数据库数据 . 对于不同的输入 , 输入的数据类型也不同
+
+#### 1 输入分片和记录
+
+​	通常来说 , 一个map处理一个输入分片(split) ; 对于数据库场景 , 一个输入分片可以对应一个表上的若干行 , 而一条记录对应一行.输入分片在 Java 中表示为 InputSplit 接口.
+
+```java
+public abstract class InputSplit{
+    // 字节为单位,分片文件的大小
+    public abstract long getLength() throws IOException, InterruptedException;
+    // 一组存储位置 , 即一组主机名(文件位置)
+    public abstract String[] getLocations() throws IOException, InterruptedException;
+}
+```
+
+> 存储位置 --> 将map 任务放在分片数据附近
+>
+> 分片大小 --> 用于排序分片 , 以便优先处理最大的分片(贪婪近似算法...)
+
+​	MapReduce 开发人员并不直接处理 InputSplit , 因为它由 InputFormat 创建(InputFormat 负责创建输入分片并将它们分割成记录)
+
+```java
+public abstract class InputFormat<K,V>{
+    public abstract List<InputSplit> getSplits(JobContext context) ;
+    public abstract RecordReader<K,V> createRecordReader(InputSplit split ,
+    													TaskAttemptContext context);
+}
+```
+
+​	作业客户端通过 getSplits() 计算分片并发给 application master , master 使用其存储位置信息来调度 map 任务从而在集群上处理这些分片数据 . map 任务把输入分片传给 InputFormat 的 createRecordReader() 方法来获取这个分片的 RecordReader . RecordReader 就像是一个记录上的迭代器 , 生成记录的键值对 , 并传递给 map 函数 . Mapper 的 run() 方法如下 :
+
+```java
+public void run(Context context){
+    setup(context);
+    while(context.nextKeyValue()){
+        map(context.getCurrentKey(),context.getCurrentValue(),context);
+        cleanup(context);
+    }
+}
+```
+
+> 如上 , context.nextKeyValue() 实际上委托给 RecordReader 来产生键值对 , 并传递给 map 函数
+
+> 注意 , 多次调用 context.getCurrentKey() 和 context.getCurrentValue() 方法返回的是同一个对象 , 也就是说如果在 map 函数之外引用 context.getCurrentXXX() 对象 , 要考虑线程安全问题 !!!!
+
+#### 2 FileInputFormat 类
+
+![](img/5-1.png)
+
+
+
+![](img/5-2.png)
+
+​	注意 : 一个被指定为输入路径的目录不会被递归 , 如果包含子目录 , 程序运行会报错(目录被当成文件) . 要解决这个问题有如下两种方法 : 1. 使用一个文件 glob 或一个过滤器根据命名模式(name pattern) 限定目录中的文件 ; 2. 将 `mapreduce.input.fileinputformat.intput.dir.recursive` 设置为 true , 从而强制递归目录
+
+​	此外 , FileIntput 默认使用一个过滤器来过滤隐藏文件(以 `.`  `_` 开头的文件) . 如果通过调用 setInputPathFilter() 设置过滤器 , 也是在默认过滤器的基础上工作 , 换句话说 , 自定义的过滤器只能看到非隐藏文件.
+
+​	Streaming 接口使用 `-input` 选项来设置路径 .
+
+![](img/5-3.png)
+
+​	控制分片大小的属性如下 :
+
+![](img/5-4.png)
+
+> 分片大小的计算公示 :  `max(minsize,min(maxsize,blockSize))`
+
+#### 3 避免切分
+
+​	有些程序希望只用一个map完整处理每一个输入文件 , 此时文件不能被切分 . 要实现这个目的可以用一下两种方式 :
+
+1. 增加最小分片大小 , 将其设置为 Long.MAX_VALUE
+2. 使用 FileInputFormat 的子类 , 并且重写 `isSplitable()`  方法 , 返回 `false` ,如下 :
+
+```java
+public class NonSplittableTextInputFormat extends TextInputFormat{
+    @override
+    public boolean isSplitable(JobContext context,Path file){
+        return false;
+    }
+}
+```
+
+#### 4 把整个文件作为一条记录处理
+
+​	有时 , mapper 需要访问一个文件的全部内容.即使不分割文件 , 仍然需要一个 RecordReader 来读取文件内容作为 record 的值 . 以下的 WholeFileInputFormat 展示了实现方法 :
+
+```java
+package com.fmi110.recordreader;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.mapreduce.InputSplit;
+import org.apache.hadoop.mapreduce.RecordReader;
+import org.apache.hadoop.mapreduce.TaskAttemptContext;
+
+import java.io.IOException;
+
+/**
+ * 单个 mapper 访问一个文件中的全部内容
+ *
+ * @author fmi110
+ * @Date 2018/4/22 16:53
+ */
+public class WholeFileReader extends RecordReader<NullWritable, BytesWritable> {
+
+    private FileSplit     fileSplit;
+    private Configuration conf;
+    // byte[] 数组对应的 Writable
+    private BytesWritable value       = new BytesWritable();
+    private boolean       isProcessed = false;
+
+    /**
+     * Called once at initialization.
+     *
+     * @param split   the split that defines the range of records to read
+     * @param context the information about the task
+     * @throws IOException
+     * @throws InterruptedException
+     */
+    @Override
+    public void initialize(InputSplit split, TaskAttemptContext context) throws IOException, InterruptedException {
+        this.fileSplit = (FileSplit) split;
+        this.conf = context.getConfiguration();
+    }
+
+    /**
+     * Read the next key, value pair.
+     *
+     * @return true if a key/value pair was read
+     * @throws IOException
+     * @throws InterruptedException
+     */
+    @Override
+    public boolean nextKeyValue() throws IOException, InterruptedException {
+        if (!isProcessed) {
+            // 缓冲区
+            byte[] contents = new byte[(int) fileSplit.getLength()];
+            // 打开文件流
+            Path              path       = fileSplit.getPath();
+            FileSystem        fileSystem = path.getFileSystem(conf);
+            FSDataInputStream in         = null;
+            try {
+                in = fileSystem.open(path);
+                IOUtils.readFully(in, contents, 0, contents.length);
+                value.set(contents, 0, contents.length);
+            } finally {
+                IOUtils.closeStream(in);
+            }
+            isProcessed = true;
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Get the current key
+     *
+     * @return the current key or null if there is no current key
+     * @throws IOException
+     * @throws InterruptedException
+     */
+    @Override
+    public NullWritable getCurrentKey() throws IOException, InterruptedException {
+        return NullWritable.get();
+    }
+
+    /**
+     * Get the current value.
+     *
+     * @return the object that was read
+     * @throws IOException
+     * @throws InterruptedException
+     */
+    @Override
+    public BytesWritable getCurrentValue() throws IOException, InterruptedException {
+        return value;
+    }
+
+    /**
+     * The current progress of the record reader through its data.
+     *
+     * @return a number between 0.0 and 1.0 that is the fraction of the data read
+     * @throws IOException
+     * @throws InterruptedException
+     */
+    @Override
+    public float getProgress() throws IOException, InterruptedException {
+        return isProcessed ? 1.0f : 0;
+    }
+
+    /**
+     * Close the record reader.
+     */
+    @Override
+    public void close() throws IOException {
+        // do nothing
+    }
+}
+```
+
+> 该类将 FileSplit 转换成一条记录 , 故使用 ` IOUtils.readFully(in, contents, 0, contents.length);`  一次性读取全部内容放到字节数组中 , 并设置给 value .
+
+```java
+import com.fmi110.recordreader.WholeRecordReader;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.BytesWritable;
+import org.apache.hadoop.io.NullWritable;
+import org.apache.hadoop.mapreduce.InputSplit;
+import org.apache.hadoop.mapreduce.JobContext;
+import org.apache.hadoop.mapreduce.RecordReader;
+import org.apache.hadoop.mapreduce.TaskAttemptContext;
+import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+
+import java.io.IOException;
+
+/**
+ * mapper 访问文件的全部内容
+ * @author fmi110
+ * @Date 2018/4/22 17:22
+ */
+public class WholeFileInputFormat extends FileInputFormat<NullWritable,BytesWritable>{
+    /**
+     * Create a record reader for a given split. The framework will call
+     * {@link RecordReader#initialize(InputSplit, TaskAttemptContext)} before
+     * the split is used.
+     *
+     * @param split   the split to be read
+     * @param context the information about the task
+     * @return a new record reader
+     * @throws IOException
+     * @throws InterruptedException
+     */
+    @Override
+    public RecordReader<NullWritable, BytesWritable> createRecordReader(InputSplit split, TaskAttemptContext context)
+            throws IOException, InterruptedException {
+        // 使用自定义的 RecordReader 实现
+        WholeRecordReader reader = new WholeRecordReader();
+        reader.initialize(split,context);
+        return reader;
+    }
+
+    @Override
+    protected boolean isSplitable(JobContext context, Path filename) {
+        return false;
+    }
+}
+```
+
+### 3 多个输入
+
+​	存在这种需求 : 一个 mapreduce 作业输入的数据源提供的数据相同,但是数据格式不同 . 此时就需要使用 MultipleInputs 类来妥善处理 , 它允许为每条输入路径指定 InputFormat 和 Mapper , 如下 :
+
+```java
+public class MaxTempratureWithMultipleInput extends Configured implements Tool{
+    @override
+    public int run(String[] args){
+		if (args.length != 3) { // 多输入
+      		JobBuilder.printUsage(this, "<ncdc input> <metoffice input> <output>");
+      		return -1;
+    	}
+        Job job = Job.getInstant(this.getConf());
+        job.setJarByClass(this.getclass());
+        
+        Path ncdcInputPath 		 = new Path(arg[0]);
+        Path metOfficeInputPath  = new Path(arg[1]);
+        Path output 			= new Path(arg[2]);
+        
+        //==========多输入部分=========//
+        MultipleInputs.addInputPath(job,ncdcInputPath,
+                                    TextInputFormat.class,MaxTemperatureMapper.class);
+        MultipleInputs.addInputPath(job,metOfficeInputPath,
+                                 TextInputFormat.class,MetOfficeMaxTemperatureMapper.class);
+        //===========================//      
+        FileOutputFormat.setOutputPath(job,output);
+        
+        job.setOutputKeyClass(Text.class);
+        job.setOutputValueClass(IntWritable.class);
+        
+        job.setReducerClass(MaxTemperatureReducer.class);
+        return job.waitForCompletion(true) ? 0 : 1;
+    }
+    
+    public static void main(string[] args){
+        int exitCode = ToolRunner.run(new MaxTempratureWithMultipleInput(),args);
+        System.exit(exitCode);
+    }
+}
+```
+
+> 关键代码 :
+>
+> `MultipleInputs.addInputPath()`  方法指定了输入的文件路径以及使用的对应的 mapper 类!!!
+
+### 4 多输出
+
+​	FileOutputFormat 及其子类产生的文件放在输出目录下 . 每个reducer 一个文件,并且文件由分区号命名 : part-r-0000 , part-r-0001 等. 有时可能需要对输出的文件名进行控制或让每个 reducer 输出多个文件 . MapReduce 为此提供了 MultipleOutputFormat 类.
+
+​	MultipleOutputFormat 类可以将数据写到多个文件 , 这些文件的名称源于输出的键和值或者任意字符串 . 这允许每个reducer(或者只有map作业的mapper)创建多个文件 . 采用 `name-m-nnnnn` 形式的文件名用于 map 输出 , `name-r-nnnnn` 形式的文件名用于 reduce 输出 , 其中 `name` 是由程序设定的任意字符串 , `nnnnn` 是一个指明块号的整数(从 00000 开始). 块号保证从不同分区写的输出在相同名字情况下不会冲突.
+
+​	下面的 reducer 将数据根据气象站和年份进行划分 , 这样每年的数据就会被包含到一个名为气象站ID的目录 , 如 `029070-99999/1901/part-r-0000`
+
+```java
+public class MultipleOutputReducer extends 
+						Reducer<Text,Text,NullWritable,Text>{
+	private MultipleOutputs<NullWritable,Text> multipleOutputs;
+    private DataParser parser = new DataParser(); // 数据解析器
+    
+    @Override
+    protext void setup(Context context){
+        // 对上下文 context 进行了包装!!!
+        this.multipleOutputs = new MultipleOutputs<NullWritable,Text>(context);
+    }
+    
+    @Override
+    protect void reduce(Text key,Iterable<Text> values,Context text){
+        for(Text value : values){
+            parser.parse(value);
+            String basePath = String.format("%s/%s/part",
+                                           parser.getStationId(),parser.getYear());
+            multipleOutputs.write(NullWritable.get(),value,basePath);
+        }
+    }
+    
+    @Override
+    protect void cleanup(Context context){
+        if(multipleOutputs != null){
+            multipleOutputs.close();
+        }
+    }
+}
+```
+
+
+
+### 5  数据库输入(输出)
+
+​	对于关系型数据库作为输入源的情况 , HDFS 提供了 DBInputFormat 类使用 JDBC 来读取 . 注意 : 在数据库中运行太多的 mapper 读数据可能导致数据库受不了 . 正是因为这个原因, DBImputFormat 最好用于加载小量的数据集 . 大数据集最好使用 MultipleInputs , 与之对应的输出格式是 DBOutputFormat .
+
+​	在关系型数据库和 HDFS 之间移动数据的另一个方法是 : 使用 Sqoop
+
+​	TableInputFormat 的HBase 用来让 MapReduce 程序操作存放在 HBase 表中的数据 , 而 TableOutputFormat 则是把 MapReduce 的输出写到 HBase 表
+
+## 7 MapReduce 的特性
+
+### 1 计数器
+
+​	计数器是用来收集作业统计信息的有效手段之一,用于质量控制或应用级统计.
+
+#### 1 内置计数器
+
+![](img/6-1.png)
+
+1. 任务计数器
+
+   任务计数器是由其关联任务维护,并定期发送给 application master . 因此,计数器能够被全局的聚集 . 任务计数器的值每次都是完整的传输 , 而非传输自上次传输后的计数值 , 从而避免由于消息丢失而引发的错误 . 另外,如果一个任务在作业执行期间失败 , 则相关计数器的值会减小 .
+
+![](img/6-2.png)
+
+![](img/6-3.png)
+
+2. 作业计数器
+
+   作业计数器由 application master 维护 , 因此无需在网络间传输数据 , 这一点与包括 "用户定义的计数器" 在内的其他计数器不同 . 这些计数器是作业级别的统计量 , 其值不会随着任务运行而改变 .
+
+![](img/6-4.png)
+
+#### 2 用户自定义的java计数器
+
+```java
+// cc MaxTemperatureWithCounters Application to run the maximum temperature job, including counting missing and malformed fields and quality codes
+import java.io.IOException;
+
+import org.apache.hadoop.conf.Configured;
+import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.mapreduce.Mapper;
+import org.apache.hadoop.util.Tool;
+import org.apache.hadoop.util.ToolRunner;
+
+// vv MaxTemperatureWithCounters
+public class MaxTemperatureWithCounters extends Configured implements Tool {
+  
+  enum Temperature {
+    MISSING,
+    MALFORMED
+  }
+  
+  static class MaxTemperatureMapperWithCounters
+    extends Mapper<LongWritable, Text, Text, IntWritable> {
+    
+    private NcdcRecordParser parser = new NcdcRecordParser();
+  
+    @Override
+    protected void map(LongWritable key, Text value, Context context)
+        throws IOException, InterruptedException {
+      
+      parser.parse(value);
+      if (parser.isValidTemperature()) {
+        int airTemperature = parser.getAirTemperature();
+        context.write(new Text(parser.getYear()),
+            new IntWritable(airTemperature));
+      } else if (parser.isMalformedTemperature()) {
+        System.err.println("Ignoring possibly corrupt input: " + value);
+        context.getCounter(Temperature.MALFORMED).increment(1);
+      } else if (parser.isMissingTemperature()) {
+        context.getCounter(Temperature.MISSING).increment(1);
+      }
+      
+      // dynamic counter
+      context.getCounter("TemperatureQuality", parser.getQuality()).increment(1);
+    }
+  }
+  
+  @Override
+  public int run(String[] args) throws Exception {
+    Job job = JobBuilder.parseInputAndOutput(this, getConf(), args);
+    if (job == null) {
+      return -1;
+    }
+    
+    job.setOutputKeyClass(Text.class);
+    job.setOutputValueClass(IntWritable.class);
+
+    job.setMapperClass(MaxTemperatureMapperWithCounters.class);
+    job.setCombinerClass(MaxTemperatureReducer.class);
+    job.setReducerClass(MaxTemperatureReducer.class);
+
+    return job.waitForCompletion(true) ? 0 : 1;
+  }
+  
+  public static void main(String[] args) throws Exception {
+    int exitCode = ToolRunner.run(new MaxTemperatureWithCounters(), args);
+    System.exit(exitCode);
+  }
+}
+// ^^ MaxTemperatureWithCounters
+```
+
+
+
+### 2 排序
+
+#### 1 部分排序
+
+​	默认情况下 , mapper 输出结果时会执行 shuffle 和排序 , 也就是根据输入记录的键对数据集进行排序 . 也就是说输入给每个 reduce 的数据是有序的 . 这就是部分排序. 
+
+> 控制排序顺序 , 键的排序由 RawComparator 控制 , 规则如下 :
+>
+> 1. 若设置 `mapreduce.job.output.key.comparator.class` 已经显示设置 , 或者通过 Job.setSortComparatorClass() 方法进行设置 , 则使用该类的实例
+> 2. 否则 , 键必须是 WritableComparable 的子类 , 并使用针对改键类已登记的 comparator
+> 3. 如果还没有已登记的 comparator , 则使用 RawComparator . RawComparator 将字节流反序列化为一个对象 , 再由 WritableComparable 的 compareTo() 方法进行操作
+
+#### 2 全排序
+
+​	如果才能产生一个全局排序的文件 ? 最简单的方法是使用一个 分区 . 但是该方法处理大型文件时效率极低 , 完全丧失了 MapReduce 所提供的并行架构的优势.
+
+> 当然使用 Pig , Hive , Crunch , Spark 也可以实现
+
+​	一个可行的方案 : 首先创建一系列排好的文件 ; 其次 , 串联这些文件 ; 最后生成一个全排序的文件. 主要思路是使用一个 partitioner 来描述输出的全局排序 . 这里有一个地方要注意 , 理想情况下 , 各个分区所包含的记录应该大致相等 , 使作业的总体执行时间不会受限于某个 reducer .
+
+​	这个时候就需要进行采样 , 进而均匀的划分数据集 . 采样的核心思想是只查看一小部分键 , 获得键的近似分布 , 并由此构建分区 . 幸运的是 , Hadoop 已经内置若干采样器 , 不需要用户自己写 :
+
+1. RandomSampler
+2. SplitSampler
+3. IntervalSample  
+4. ....
+
+### 3 辅助排序(二次排序)
+
+​	MapReduce 框架在记录到达 reducer 之前按键对记录进行排序 , 但键对应的值并没有排序 . 但有时也需要通过对特定的方法对键进行排序和分组,进而实现对值的排序 . 这种情况成为辅助排序 .
+
+ 	例如 , 考虑如何设计一个 MapReduce 程序以计算每年的最高气温 . 如果全部记录均按照气温降序排列 , 则无需遍历整个数据集即可获得查询结果, 如下 :
+
+```
+1900 35
+1900 34
+1900 34
+....
+1901 36
+1901 35
+```
+
