@@ -305,7 +305,7 @@ public class ColorJob implements Job {
 
 ​	激活失败指令（Misfire Instructions）是触发器的一个重要属性，它指定了misfire发生时调度器应当如何处理。所有类型的触发器都有一个默认的指令，叫做Trigger.MISFIRE_INSTRUCTION_SMART_POLICY，但是这个这个“聪明策略”对于不同类型的触发器其具体行为是不同的。
 
-​	对于`SimpleTrigger`，这个“聪明策略”将根据触发器实例的状态和配置来决定其行为:
+​	对于    `SimpleTrigger`，这个“聪明策略”将根据触发器实例的状态和配置来决定其行为:
 
 > 如果RepeatCount=0：
 >
