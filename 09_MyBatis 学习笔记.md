@@ -295,7 +295,7 @@ password=
 
 > 事实上 , parameterType="USER" , 用 "user" "User" "USER" 此时都能识别,貌似这里是忽略大小写的!!!
 
-​	也可以指定报名,Mybatis 会自动到包下面搜索需要的 javaBean 对象
+​	也可以指定包名,Mybatis 会自动到包下面搜索需要的 javaBean 对象
 
 ```Xml
 <typeAliases>

@@ -139,7 +139,7 @@
 <dependency>
     <groupId>javax.servlet</groupId>
     <artifactId>servlet-api</artifactId>
-    <version>2.4</version>
+    <version>2.5</version>
     <scope>provided</scope>
 </dependency>
 <dependency>
@@ -147,6 +147,11 @@
     <artifactId>jsp-api</artifactId>
     <version>2.0</version>
     <scope>provided</scope>
+</dependency>
+ <dependency>
+            <groupId>javax.servlet</groupId>
+            <artifactId>jstl</artifactId>
+            <version>1.2</version>
 </dependency>
 ```
 
@@ -240,7 +245,11 @@
 #### 6 spring-session
 
 ```
-
+<dependency>
+  <groupId>org.springframework.session</groupId>
+  <artifactId>spring-session</artifactId>
+  <version>1.3.3.RELEASE</version>
+</dependency>
 ```
 
 
@@ -466,6 +475,12 @@
     <artifactId>mybatis-spring</artifactId>
     <version>1.3.1</version>
 </dependency>
+
+ <dependency>
+            <groupId>org.mybatis.generator</groupId>
+            <artifactId>mybatis-generator-core</artifactId>
+            <version>1.3.5</version>
+</dependency>
 ```
 
 ### mybatis-plus
@@ -478,6 +493,19 @@
 	<version>2.1.8</version>
 </dependency>
 ```
+
+### mybatis 通用 mapper
+
+```xml
+<!-- https://mvnrepository.com/artifact/tk.mybatis/mapper -->
+<dependency>
+    <groupId>tk.mybatis</groupId>
+    <artifactId>mapper</artifactId>
+    <version>4.0.2</version>
+</dependency>
+```
+
+[文档](https://github.com/abel533/Mybatis-Spring)
 
 ### mybatis 分页插件
 
@@ -534,6 +562,28 @@
    <artifactId>redisson</artifactId>
    <version>2.11.1</version>
 </dependency>
+```
+
+### Ehcache
+
+```
+ <!-- 缓存 -->
+        <dependency>
+            <groupId>net.sf.ehcache</groupId>
+            <artifactId>ehcache</artifactId>
+            <version>2.10.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.mybatis</groupId>
+            <artifactId>mybatis-ehcache</artifactId>
+            <version>1.0.0</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>net.sf.ehcache</groupId>
+                    <artifactId>ehcache-core</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
 ```
 
 
@@ -659,6 +709,121 @@
     </configuration>
 </plugin>
 ```
+
+### 6 build-helper-maven-plugin 
+
+```xml
+<!-- 指定多个源代码目录、多个资源文件目录 -->
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>build-helper-maven-plugin</artifactId>
+        <version>1.8</version>
+        <executions>
+          <execution>
+            <id>add-source</id>
+            <phase>generate-sources</phase>
+            <goals>
+              <goal>add-source</goal>
+            </goals>
+            <configuration>
+              <sources>
+                <source>src/java/main</source>
+                <source>src/java/generated</source>
+              </sources>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+```
+
+### 7 打包多个资源目录
+
+```xml
+ <build>  
+        <finalName>test</finalName>  
+        <!--  
+        这样也可以把所有的xml文件，打包到相应位置。  -->
+        <resources>  
+            <resource>  
+                <directory>src/main/resources</directory>  
+                <includes>  
+                    <include>**/*.properties</include>  
+                    <include>**/*.xml</include>  
+                    <include>**/*.tld</include>  
+                </includes>  
+                <filtering>false</filtering>  
+            </resource>  
+            <resource>  
+                <directory>src/main/java</directory>  
+                <includes>  
+                    <include>**/*.properties</include>  
+                    <include>**/*.xml</include>  
+                    <include>**/*.tld</include>  
+                </includes>  
+                <filtering>false</filtering>  
+            </resource>  
+        </resources>  
+    </build>  
+```
+
+### 8 maven-resources-plugin
+
+```xml
+  <!--    
+            利用此plugin，把源代码中的xml文件，打包到相应位置，  
+            这里主要是为了打包Mybatis的mapper.xml文件   
+            -->  
+            <plugin>  
+                <artifactId>maven-resources-plugin</artifactId>  
+                <version>2.5</version>  
+                <executions>  
+                    <execution>  
+                        <id>copy-xmls</id>  
+                        <phase>process-sources</phase>  
+                        <goals>  
+                            <goal>copy-resources</goal>  
+                        </goals>  
+                        <configuration>  
+                            <outputDirectory>${basedir}/target/classes</outputDirectory>  
+                            <resources>  
+                                <resource>  
+                                    <directory>${basedir}/src/main/java</directory>  
+                                    <includes>  
+                                        <include>**/*.xml</include>  
+                                    </includes>  
+                                </resource>  
+                            </resources>  
+                        </configuration>  
+                    </execution>  
+                </executions>  
+            </plugin>     
+```
+
+### 9 mybatis-generator-maven-plugin
+
+```xml
+ <plugin>
+                <groupId>org.mybatis.generator</groupId>
+                <artifactId>mybatis-generator-maven-plugin</artifactId>
+                <version>1.3.2</version>
+                <configuration>
+                    <!--配置文件的位置-->
+                    <configurationFile>src/main/resources/mybatis-generator-config.xml</configurationFile>
+                    <verbose>true</verbose>
+                    <overwrite>true</overwrite>
+                </configuration>
+                <dependencies>
+                    <dependency>
+                        <!--插件单独指定依赖驱动jar,否则报找不到驱动异常-->
+                        <groupId>mysql</groupId>
+                        <artifactId>mysql-connector-java</artifactId>
+                        <version>5.1.39</version>
+                    </dependency>
+                </dependencies>
+            </plugin>
+```
+
+
 
 ## 3 常用的配置文件模版
 

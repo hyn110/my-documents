@@ -167,6 +167,10 @@ java                         mysql-5.7.19-1.el6.i686.rpm-bundle.tar  tomcat
 firewall-cmd --zone=public --add-port=8080/tcp --permanent
 # 重启防火墙
 systemctl restart firewalld.service
+
+firewall-cmd --zone=public --add-port=11111/tcp --permanent
+# 重启防火墙
+systemctl restart firewalld.service
 ```
 
 ​	**centos 6.5**
@@ -2011,5 +2015,45 @@ my test message 2
 {"version":1,"brokerid":3,"timestamp":"1520585755072"}
 
 
+```
+
+## 11 centos 7 安装mysql 5.6
+
+下载地址 ：https://cdn.mysql.com//Downloads/MySQL-5.6/MySQL-5.6.40-1.el7.x86_64.rpm-bundle.tar
+
+```shell
+yum install -y perl-Module-Install.noarch 
+
+# 解压
+tar -zxf MySQL-5.6.40-1.el7.x86_64.rpm-bundle.tar 
+
+rpm -ivh MySQL-server-5.6.40-1.el7.x86_64.rpm
+rpm -ivh MySQL-devel-5.6.40-1.el7.x86_64.rpm
+rpm -ivh MySQL-client-5.6.40-1.el7.x86_64.rpm
+# mysql_install_db --user=mysql --ldata=/var/lib/mysql/
+# 启动服务
+service mysql start
+
+# 开放端口
+firewall-cmd --zone=public --add-port=3306/tcp --permanent
+# 重启防火墙
+systemctl restart firewalld.service
+
+firewall-cmd --zone=public --add-port=11111/tcp --permanent
+systemctl restart firewalld.service
+```
+
+​	查看初始密码 ：
+
+```shell
+[root@localhost src]# cat /root/.mysql_secret | grep password
+# The random password set for the root user at Tue Jun 19 20:32:47 2018 (local time): hfaQX_FEofuOcxZ2
+```
+
+​	允许root远程登录：
+
+```
+mysql> GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' IDENTIFIED BY '123456' WITH GRANT OPTION;
+mysql> flush privileges;   # 刷入权限
 ```
 
