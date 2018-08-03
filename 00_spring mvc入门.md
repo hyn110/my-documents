@@ -259,7 +259,7 @@ joda-time-2.9.9.jar
                         http://www.springframework.org/schema/tx
                         http://www.springframework.org/schema/tx/spring-tx-4.0.xsd">
     <!-- 设置使用注解的类所在的jar包 -->
-    <context:component-scan base-package="com.itheima" />
+    <context:component-scan base-package="com.fmi110" />
     <mvc:annotation-driven/>
     <!--静态资源交给 defaultServlet 处理,否则访问静态资源会 404-->
     <mvc:default-servlet-handler/>
@@ -573,7 +573,7 @@ session 域 :
     public ModelAndView  sayHello(){
 
         User user = new User();
-        user.setUsername("itheima");
+        user.setUsername("fmi110");
         user.setPassword("123");
 
         ModelAndView mv = new ModelAndView();
@@ -629,7 +629,7 @@ String testPathVariable(@PathVariable("username") String name,
 }
 ```
 
-​	URL为 : `http://localhost:8080/springmvc/t3/itheima/123`  , 此时 name 的值为 itheima , password 的值为 123  , @PathVariable 只有一个 value 属性 , 其作用自己参照示例总结!!!
+​	URL为 : `http://localhost:8080/springmvc/t3/fmi110/123`  , 此时 name 的值为 fmi110 , password 的值为 123  , @PathVariable 只有一个 value 属性 , 其作用自己参照示例总结!!!
 
 #### 5 @RequestHeader
 
@@ -676,7 +676,7 @@ public class HelloController {
           User u1 = new User();
           u1.setUsername("fmi110");
           User u2 = new User();
-          u2.setUsername("itheima");
+          u2.setUsername("fmi110");
           model.addAttribute("xxx", u1);
           model.addAttribute("user2", u2);
           return "/index.jsp";
@@ -746,9 +746,9 @@ public String testRequestBody(@RequestBody List<User> list) {
 
 ```js
 $(function(){
-    var data = "[{\"username\"": "\"fmi110\",\"password\":\"xxx\"},{\"username\":\"itheima\",\"password\":\"czbk\"}]";
+    var data = "[{\"username\"": "\"fmi110\",\"password\":\"xxx\"},{\"username\":\"fmi110\",\"password\":\"czbk\"}]";
   	// json 数据
-  	data = [{"username":"fmi110","password":"xxx"},{"username":"itheima","password":"czbk"}];
+  	data = [{"username":"fmi110","password":"xxx"},{"username":"fmi110","password":"czbk"}];
         
     $.ajax({ 
          type:"POST", 
@@ -1108,7 +1108,7 @@ springmvc-config.xml 中添加如下 mvc 拦截器
     <property name="converters">
         <list>
           	<!--注入自定义的转换器实现类-->
-            <bean class="com.itheima.converter.StringToDateConverter">
+            <bean class="com.fmi110.converter.StringToDateConverter">
               	<!--定义日期的格式-->
                 <property name="pattern" value="yyyy-MM-dd"/>
             </bean>
@@ -1190,7 +1190,7 @@ public class DateBindingInitializer implements WebBindingInitializer {
 <!--该 bean 需要声明在 mvc:annotation-driven 标签之前 ,否则失效 -->
 <bean class="org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter">
     <property name="webBindingInitializer">
-        <bean class="com.itheima.converter.DateBindingInitializer"/>
+        <bean class="com.fmi110.converter.DateBindingInitializer"/>
     </property>
 </bean>
 <!--<mvc:annotation-driven/>-->
@@ -1198,9 +1198,10 @@ public class DateBindingInitializer implements WebBindingInitializer {
 	<!--AnnotationMethodHandlerAdapter 已过期-->
     <!--<bean class="org.springframework.web.servlet.mvc.annotation.AnnotationMethodHandlerAdapter">-->
         <!--<property name="webBindingInitializer">-->
-            <!--<bean class="com.itheima.converter.DateBindingInitializer"/>-->
+            <!--<bean class="com.fmi110.converter.DateBindingInitializer"/>-->
         <!--</property>-->
     <!--</bean>-->
+
 ```
 
 ​	**这里需要注意的是, 因为 `<mvc:annotation-driven/>`  默认会注册一个 RequestMappingHandlerAdapter , 为了防止我们自己声明的 RequestMappingHandlerAdapter 失效 , 需要将 声明 放在  `<mvc:annotation-driven/>`  标签之前 !!!**

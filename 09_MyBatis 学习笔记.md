@@ -526,7 +526,7 @@ SqlSessionFactory factory = new SqlSessionFactoryBuilder().build(reader,properti
 
 > 注意 : 这里使用了 MyBatis 内置的别名 hashmap !!! 映射 java.util.HashMap
 
-​	这个语句被称作 selectPerson，接受一个 int（或 Integer）类型的参数，并返回一个 HashMap 类型的对象，其中的键是列名，值便是结果行中的对应值。
+​	这个语句被称作 selectPerson，接受一个 int（或 Integer）类型的参数，并返回一个 HashMap 类型的对象，**其中的键是列名，值便是结果行中的对应值**。
 
 ​	这里 `#{id}` 是占位符 , 这里如果用 jdbc 来实现的话 , 大致如下:
 
