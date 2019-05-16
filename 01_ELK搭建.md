@@ -6,6 +6,14 @@
 groupadd elk && useradd elk -g elk -p elk123456
 ```
 
+​	放行端口
+
+```
+firewall-cmd --permanent --add-port=9200/tcp
+firewall-cmd --permanent --add-port=5601/tcp
+firewall-cmd --reload
+```
+
 ## 1 下载及安装
 
 [官网资料](https://www.elastic.co/guide/en/elastic-stack-get-started/current/get-started-elastic-stack.html#install-logstash)
@@ -32,7 +40,7 @@ Caused by: java.lang.RuntimeException: can not run elasticsearch as root
 # 修改文件权限
 [root@localhost local]# chown -R elk:elk elasticsearch-6.6.0/
 # 切换用户
-[root@localhost elasticsearch-6.6.0]# su elasticsearch
+[root@localhost elasticsearch-6.6.0]# su elk
 # 启动el
 [elk@localhost elasticsearch-6.6.0]$ ./bin/elasticsearch
 ```
@@ -398,6 +406,13 @@ output {
 基础入门:https://www.extlight.com/2017/10/31/Kibana-%E5%9F%BA%E7%A1%80%E5%85%A5%E9%97%A8/
 
 配置说明:https://blog.csdn.net/wumeng2012/article/details/84860485
+
+​	kibana 默认只能本地访问 , 如果需要远程访问界面 , 修改修改配置文件,将$KIBANA/config/kibaba.yml下的
+
+```
+server.host: "localhost" 更改为
+server.host: "0.0.0.0" 
+```
 
 ## 3 案例演示
 
