@@ -31,23 +31,23 @@
      >安装过程中会提示程序需要修改环境变量,或者安装一些驱动时,需要全部选择确认
 
 - **验证安装**
-  - 运行客户终端 `Docker QuickStart Terminal`,当出现`$`时,说明程序初始化完成
+  -   运行客户终端 `Docker QuickStart Terminal`,当出现`$`时,说明程序初始化完成
 
-    ![客户终端初始化完成](https://docs.docker.com/toolbox/images/b2d_shell.png)
+      ![客户终端初始化完成](https://docs.docker.com/toolbox/images/b2d_shell.png)
 
-  - 输入指令 `docker run hello-world` ,并回车,当程序能正确运行后,控制台可以看到如下的类似信息
+  -   输入指令 `docker run hello-world` ,并回车,当程序能正确运行后,控制台可以看到如下的类似信息
 
-    ```powershell
-     $ docker run hello-world
-     Unable to find image 'hello-world:latest' locally
-     Pulling repository hello-world
-     91c95931e552: Download complete
-     a8219747be10: Download complete
-     Status: Downloaded newer image for hello-world:latest
-     Hello from Docker.
-     This message shows that your installation appears to be working correctly.
+      ```powershell
+         $ docker run hello-world
+         Unable to find image 'hello-world:latest' locally
+         Pulling repository hello-world
+         91c95931e552: Download complete
+         a8219747be10: Download complete
+         Status: Downloaded newer image for hello-world:latest
+         Hello from Docker.
+         This message shows that your installation appears to be working correctly.
 
-     To generate this message, Docker took the following steps:
+         To generate this message, Docker took the following steps:
       1. The Docker Engine CLI client contacted the Docker Engine daemon.
       2. The Docker Engine daemon pulled the "hello-world" image from the Docker Hub.
          (Assuming it was not already locally available.)
@@ -55,6 +55,7 @@
          executable that produces the output you are currently reading.
       4. The Docker Engine daemon streamed that output to the Docker Engine CLI client, which sent it
          to your terminal.
+      ```
 
      To try something more ambitious, you can run an Ubuntu container with:
       $ docker run -it ubuntu bash
@@ -64,6 +65,7 @@
     ```
 
     ​
+    ```
 
 
 ## 3 CentOS 7 下安装Docker
@@ -96,38 +98,37 @@
 
 > 会联网更新系统的依赖 , 需要一些时间
 
-2. 设置 docker 仓库地址地址
+2.  设置 docker 仓库地址地址
 
-   ```sh
-   [root@localhost /]# sudo yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
-   已加载插件：fastestmirror, langpacks
-   adding repo from: https://download.docker.com/linux/centos/docker-ce.repo
-   grabbing file https://download.docker.com/linux/centos/docker-ce.repo to /etc/yum.repos.d/docker-ce.repo
-   repo saved to /etc/yum.repos.d/docker-ce.repo
-   ```
+    ```sh
+    [root@localhost /]# sudo yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+    已加载插件：fastestmirror, langpacks
+    adding repo from: https://download.docker.com/linux/centos/docker-ce.repo
+    grabbing file https://download.docker.com/linux/centos/docker-ce.repo to /etc/yum.repos.d/docker-ce.repo
+    repo saved to /etc/yum.repos.d/docker-ce.repo
+    ```
 
-3. 更新 `yum` 包的索引
+3.  更新 `yum` 包的索引
 
-   ```sh
-   [root@localhost /]# sudo yum makecache fast
-   已加载插件：fastestmirror, langpacks
-   base                                                              | 3.6 kB  00:00:00     
-   docker-ce-stable                                                  | 2.9 kB  00:00:00     
-   extras                                                            | 3.4 kB  00:00:00     
-   updates                                                           | 3.4 kB  00:00:00     
-   docker-ce-stable/x86_64/primary_db                                | 6.8 kB  00:00:01     
-   Loading mirror speeds from cached hostfile
+    ```sh
+     [root@localhost /]# sudo yum makecache fast
+     已加载插件：fastestmirror, langpacks
+     base                                                              | 3.6 kB  00:00:00     
+     docker-ce-stable                                                  | 2.9 kB  00:00:00     
+     extras                                                            | 3.4 kB  00:00:00     
+     updates                                                           | 3.4 kB  00:00:00     
+     docker-ce-stable/x86_64/primary_db                                | 6.8 kB  00:00:01     
+     Loading mirror speeds from cached hostfile
     * base: mirror.bit.edu.cn
     * extras: mirror.lzu.edu.cn
     * updates: mirrors.cn99.com
-   元数据缓存已建立
-   ```
+    元数据缓存已建立
+    ```
+4.  安装最新版本的 `docker-ce`
 
-4. 安装最新版本的 `docker-ce`
-
-   ```sh
-   [root@localhost /]# sudo yum install docker-ce
-   ```
+    ```
+    [root@localhost /]# sudo yum install docker-ce
+    ```
 
 > 1 可以通过 `sudo yum list docker-ce.x86_64 --showduplicates | sort -r` 来查看安装包列表
 >
@@ -141,26 +142,27 @@
 
 > CentOS 7 使用了新的命令 `systemctl` 来替代 `service` 
 
-6. 运行 `hello-world` 镜像 , 验证 docker 是否安装成功
+6.  运行 `hello-world` 镜像 , 验证 docker 是否安装成功
 
-   ```sh
-   [root@localhost /]# docker run  hub.c.163.com/library/hello-world:latest
-   Unable to find image 'hub.c.163.com/library/hello-world:latest' locally
-   latest: Pulling from library/hello-world
-   7a9d05de7670: Pull complete 
-   Digest: sha256:7391d42f476e10480a3da94f15233703f6c6abcd9b5165e390121f867039a6df
-   Status: Downloaded newer image for hub.c.163.com/library/hello-world:latest
+    ```sh
+    [root@localhost /]# docker run  hub.c.163.com/library/hello-world:latest
+    Unable to find image 'hub.c.163.com/library/hello-world:latest' locally
+    latest: Pulling from library/hello-world
+    7a9d05de7670: Pull complete 
+    Digest: sha256:7391d42f476e10480a3da94f15233703f6c6abcd9b5165e390121f867039a6df
+    Status: Downloaded newer image for hub.c.163.com/library/hello-world:latest
 
-   Hello from Docker!
-   This message shows that your installation appears to be working correctly.
+    Hello from Docker!
+    This message shows that your installation appears to be working correctly.
 
-   To generate this message, Docker took the following steps:
+    To generate this message, Docker took the following steps:
     1. The Docker client contacted the Docker daemon.
     2. The Docker daemon pulled the "hello-world" image from the Docker Hub.
     3. The Docker daemon created a new container from that image which runs the
        executable that produces the output you are currently reading.
     4. The Docker daemon streamed that output to the Docker client, which sent it
        to your terminal.
+    ```
 
    To try something more ambitious, you can run an Ubuntu container with:
     $ docker run -it ubuntu bash
@@ -203,7 +205,7 @@
 
   ```Sh
   	docker pull redis   等效于   docker pull redis[:latest]
-  ```
+   ```
 
   >如果不指定 `tag` ,会默认选择 `latest` 标签,即最新版本的镜像
 
@@ -1434,8 +1436,8 @@ ENV  JAVA_HOME /jdk
 ENV  PATH $CATALINA_HOME/bin:$JAVA_HOME:$PATH
 
 # 复制tomcat 和 jdk 文件到镜像中
-ADD apache-tomcat-7.0.79 /tomcat
-ADD jdk1.8.0_141 /jdk
+ADD apache-tomcat-7.0.94 /tomcat
+ADD jdk1.8.0_144 /jdk
 
 # 添加管理员账户
 RUN echo  \<?xml version=\'1.0\' encoding=\'utf-8\'?\>  \
