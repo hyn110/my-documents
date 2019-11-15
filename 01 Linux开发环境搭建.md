@@ -1069,11 +1069,11 @@ iptables：将防火墙规则保存到 /etc/sysconfig/iptables：     [确定]
 2.  测试配置文件是否正确
 
     ```sh
-        [root@centos-6 sbin]# pwd			# 查看当前目录
-        /usr/local/nginx/sbin
-        [root@centos-6 sbin]# /usr/local/nginx/sbin/nginx -t
-        nginx: the configuration file /usr/local/nginx/conf/nginx.conf syntax is ok
-        nginx: configuration file /usr/local/nginx/conf/nginx.conf test is successful
+         [root@centos-6 sbin]# pwd			# 查看当前目录
+         /usr/local/nginx/sbin
+         [root@centos-6 sbin]# /usr/local/nginx/sbin/nginx -t
+         nginx: the configuration file /usr/local/nginx/conf/nginx.conf syntax is ok
+         nginx: configuration file /usr/local/nginx/conf/nginx.conf test is successful
     ```
 
     > 1. 当修改配置文件后,最好执行检查命令,确认无误后再重启ngnix
